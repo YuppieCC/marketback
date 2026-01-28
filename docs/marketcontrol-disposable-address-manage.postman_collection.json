@@ -1,0 +1,601 @@
+{
+	"info": {
+		"_postman_id": "disposable-address-manage-collection-id",
+		"name": "MarketControl - Disposable Address Manage API",
+		"description": "API collection for Disposable Address Management in Market Control System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4855723"
+	},
+	"item": [
+		{
+			"name": "Disposable Address Management",
+			"description": "CRUD operations for disposable address management",
+			"item": [
+				{
+					"name": "List All Disposable Addresses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage"
+							]
+						},
+						"description": "Get all disposable managed addresses"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id\": 1,\n        \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n        \"private_key\": \"encrypted_private_key_here\",\n        \"is_deprecated\": false,\n        \"created_at\": \"2024-01-15T10:30:00Z\",\n        \"updated_at\": \"2024-01-15T10:30:00Z\"\n    },\n    {\n        \"id\": 2,\n        \"address\": \"7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU\",\n        \"private_key\": \"encrypted_private_key_here\",\n        \"is_deprecated\": false,\n        \"created_at\": \"2024-01-15T10:35:00Z\",\n        \"updated_at\": \"2024-01-15T10:35:00Z\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Disposable Address by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Disposable Address ID"
+								}
+							]
+						},
+						"description": "Get a specific disposable managed address by ID"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 1,\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"private_key\": \"encrypted_private_key_here\",\n    \"is_deprecated\": false,\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:30:00Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Disposable Address",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"private_key\": \"encrypted_private_key_here\",\n    \"is_deprecated\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage"
+							]
+						},
+						"description": "Create a new disposable managed address"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"private_key\": \"encrypted_private_key_here\",\n    \"is_deprecated\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 1,\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"private_key\": \"encrypted_private_key_here\",\n    \"is_deprecated\": false,\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:30:00Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Generate Disposable Addresses",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"count\": 5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage/generate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage",
+								"generate"
+							]
+						},
+						"description": "Generate multiple Solana addresses for disposable addresses. The count must be between 1 and 100."
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"count\": 5\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage/generate",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage",
+										"generate"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"成功生成 5 个 Solana 地址\",\n    \"addresses\": [\n        {\n            \"id\": 1,\n            \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n            \"private_key\": \"encrypted_private_key_here\",\n            \"is_deprecated\": false,\n            \"created_at\": \"2024-01-15T10:30:00Z\",\n            \"updated_at\": \"2024-01-15T10:30:00Z\"\n        },\n        {\n            \"id\": 2,\n            \"address\": \"7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU\",\n            \"private_key\": \"encrypted_private_key_here\",\n            \"is_deprecated\": false,\n            \"created_at\": \"2024-01-15T10:30:00Z\",\n            \"updated_at\": \"2024-01-15T10:30:00Z\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get and Replace Disposable Address",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"deprecated-address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage/get-and-replace",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage",
+								"get-and-replace"
+							]
+						},
+						"description": "Get a new disposable address (first available non-deprecated address) and mark the specified deprecated address as deprecated"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"deprecated-address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage/get-and-replace",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage",
+										"get-and-replace"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 2,\n    \"address\": \"7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU\",\n    \"private_key\": \"encrypted_private_key_here\",\n    \"is_deprecated\": false,\n    \"created_at\": \"2024-01-15T10:35:00Z\",\n    \"updated_at\": \"2024-01-15T10:35:00Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Disposable Address",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"UpdatedWalletAddress123456789...\",\n    \"private_key\": \"updated_encrypted_private_key_here\",\n    \"is_deprecated\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Disposable Address ID to update"
+								}
+							]
+						},
+						"description": "Update an existing disposable managed address"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"address\": \"UpdatedWalletAddress123456789...\",\n    \"private_key\": \"updated_encrypted_private_key_here\",\n    \"is_deprecated\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 1,\n    \"address\": \"UpdatedWalletAddress123456789...\",\n    \"private_key\": \"updated_encrypted_private_key_here\",\n    \"is_deprecated\": true,\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T11:00:00Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Disposable Address",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Disposable Address ID to delete"
+								}
+							]
+						},
+						"description": "Delete a disposable managed address"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Record deleted successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Export Disposable Addresses With New Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"old_password\": \"\",\n    \"new_password\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage/export-with-new-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage",
+								"export-with-new-password"
+							]
+						},
+						"description": "Export all disposable addresses with private keys re-encrypted using a new password"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"old_password\": \"your_old_password\",\n    \"new_password\": \"your_new_password\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage/export-with-new-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage",
+										"export-with-new-password"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Disposition",
+									"value": "attachment; filename=disposable_addresses_export.json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Successfully exported 2 disposable addresses\",\n    \"addresses\": [\n        {\n            \"address\": \"5WmCBAUcn8awSPLKnBzBeXcZ33PPinDoVdrrydJecLoY\",\n            \"private_key\": \"encrypted_private_key_string\"\n        },\n        {\n            \"address\": \"7Z3SHqQryYF7Bk3tKEa9GSUqRyuJJSpXvXQ4XHDwKxSB\",\n            \"private_key\": \"encrypted_private_key_string\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Import and Verify Password for Disposable Addresses",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"description": "JSON file containing disposable addresses and private keys",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "password",
+									"value": "",
+									"description": "Password for verifying and importing disposable addresses",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/disposable-address-manage/import-and-verify-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"disposable-address-manage",
+								"import-and-verify-password"
+							]
+						},
+						"description": "Import disposable addresses from a JSON file and verify them using the provided password. The endpoint will:\n1. Verify existing disposable addresses in the database using the password\n2. Verify addresses in the imported file\n3. Import new addresses (skipping duplicates)\n\nFile format example:\n{\n    \"addresses\": [\n        {\n            \"address\": \"solana_address_here\",\n            \"private_key\": \"encrypted_private_key_here\"\n        }\n    ]\n}"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "password",
+											"value": "your_password",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/disposable-address-manage/import-and-verify-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"disposable-address-manage",
+										"import-and-verify-password"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Successfully imported 5 new disposable addresses\",\n    \"imported_count\": 5,\n    \"skipped_count\": 2\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string",
+			"description": "Base URL for the MarketControl API"
+		}
+	]
+}
+

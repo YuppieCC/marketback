@@ -1,0 +1,298 @@
+{
+	"info": {
+		"_postman_id": "system-command-collection-2024",
+		"name": "marketcontrol-api-system-command",
+		"description": "API collection for System Command management in Market Control System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "4855723"
+	},
+	"item": [
+		{
+			"name": "System Command",
+			"item": [
+				{
+					"name": "ListSystemCommands - GET /system-command",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/system-command?page=1&page_size=10&order_field=id&order_type=desc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"system-command"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Items per page (default 10, max 100)"
+								},
+								{
+									"key": "order_field",
+									"value": "id",
+									"description": "Field to order by: id|project_id|command_name|is_active|is_success|created_at|updated_at (default id)"
+								},
+								{
+									"key": "order_type",
+									"value": "desc",
+									"description": "Order direction: asc|desc (default desc)"
+								},
+								{
+									"key": "command_name",
+									"value": "",
+									"description": "Filter by command_name (LIKE search)",
+									"disabled": true
+								},
+								{
+									"key": "is_active",
+									"value": "true",
+									"description": "Filter by is_active: true|false",
+									"disabled": true
+								},
+								{
+									"key": "is_success",
+									"value": "false",
+									"description": "Filter by is_success: true|false",
+									"disabled": true
+								},
+								{
+									"key": "project_id",
+									"value": "1",
+									"description": "Filter by project_id",
+									"disabled": true
+								}
+							]
+						},
+						"description": "List system commands with pagination and optional filters.\n\nQuery Parameters:\n- page: Page number (default: 1)\n- page_size: Items per page (default: 10, max: 100)\n- order_field: Field to order by (id|project_id|command_name|is_active|is_success|created_at|updated_at)\n- order_type: Order direction (asc|desc)\n- command_name: Filter by command name (LIKE search)\n- is_active: Filter by active status (true|false)\n- is_success: Filter by success status (true|false)\n- project_id: Filter by project ID\n\nResponse includes pagination metadata."
+					},
+					"response": []
+				},
+				{
+					"name": "GetLatestSystemCommand - GET /system-command/latest",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/system-command/latest",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"system-command",
+								"latest"
+							]
+						},
+						"description": "Get the latest system command record (highest ID).\n\nReturns the most recently created system command record based on ID in descending order. This endpoint does not require any parameters.\n\nUseful for retrieving the most recent command execution status."
+					},
+					"response": []
+				},
+				{
+					"name": "ListSystemCommandsByProject - GET /system-command/project/:project_id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/system-command/project/:project_id?page=1&page_size=10&order_field=id&order_type=desc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"system-command",
+								"project",
+								":project_id"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Items per page (default 10, max 100)"
+								},
+								{
+									"key": "order_field",
+									"value": "id",
+									"description": "Field to order by: id|project_id|command_name|is_active|is_success|created_at|updated_at (default id)"
+								},
+								{
+									"key": "order_type",
+									"value": "desc",
+									"description": "Order direction: asc|desc (default desc)"
+								},
+								{
+									"key": "command_name",
+									"value": "",
+									"description": "Filter by command_name (LIKE search)",
+									"disabled": true
+								},
+								{
+									"key": "is_active",
+									"value": "true",
+									"description": "Filter by is_active: true|false",
+									"disabled": true
+								},
+								{
+									"key": "is_success",
+									"value": "false",
+									"description": "Filter by is_success: true|false",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "project_id",
+									"value": "1",
+									"description": "Project ID"
+								}
+							]
+						},
+						"description": "List system commands filtered by project_id with pagination.\n\nPath Parameters:\n- project_id: Project ID (required)\n\nQuery Parameters:\n- page: Page number (default: 1)\n- page_size: Items per page (default: 10, max: 100)\n- order_field: Field to order by (id|project_id|command_name|is_active|is_success|created_at|updated_at)\n- order_type: Order direction (asc|desc)\n- command_name: Filter by command name (LIKE search)\n- is_active: Filter by active status (true|false)\n- is_success: Filter by success status (true|false)\n\nResponse includes pagination metadata for all commands matching the project_id."
+					},
+					"response": []
+				},
+				{
+					"name": "GetSystemCommand - GET /system-command/:id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/system-command/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"system-command",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "System command ID"
+								}
+							]
+						},
+						"description": "Get a specific system command record by ID.\n\nPath Parameters:\n- id: System command ID (required)\n\nReturns the system command record with all fields including command_params and verify_params."
+					},
+					"response": []
+				},
+				{
+					"name": "CreateSystemCommand - POST /system-command",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"is_active\": true,\n  \"project_id\": 1,\n  \"command_name\": \"buy_token\",\n  \"command_params\": {\n    \"role_id\": 1,\n    \"first_buy_amount\": 87.5\n  },\n  \"verify_params\": {\n    \"project_id\": 1,\n    \"pool_address\": \"2h3MDPYRtTRMUArzd3cab3EmPFWrFpA4dZWHhrDLgoyC\"\n  },\n  \"is_success\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/system-command",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"system-command"
+							]
+						},
+						"description": "Create a new system command record.\n\nRequest Body:\n- is_active (optional): Active status (boolean, default: true)\n- project_id (optional): Project ID (uint, default: 0)\n- command_name (optional): Command name (string, default: empty)\n- command_params (optional): Command parameters as JSON object (jsonb)\n- verify_params (optional): Verification parameters as JSON object (jsonb)\n- is_success (optional): Success status (boolean, default: false)\n\nExample command_params:\n{\n  \"role_id\": 1,\n  \"first_buy_amount\": 87.5\n}\n\nExample verify_params:\n{\n  \"project_id\": 1,\n  \"pool_address\": \"2h3MDPYRtTRMUArzd3cab3EmPFWrFpA4dZWHhrDLgoyC\"\n}\n\nReturns the created system command record with auto-generated ID and timestamps."
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateSystemCommand - PUT /system-command/:id",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"is_active\": false,\n  \"project_id\": 2,\n  \"command_name\": \"sell_token\",\n  \"command_params\": {\n    \"role_id\": 2,\n    \"sell_amount\": 50.0\n  },\n  \"verify_params\": {\n    \"project_id\": 2,\n    \"pool_address\": \"3h4MDPYRtTRMUArzd3cab3EmPFWrFpA4dZWHhrDLgoyD\"\n  },\n  \"is_success\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/system-command/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"system-command",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "System command ID to update"
+								}
+							]
+						},
+						"description": "Update an existing system command record. All fields are optional (partial update).\n\nPath Parameters:\n- id: System command ID (required)\n\nRequest Body (all fields optional):\n- is_active: Active status (boolean)\n- project_id: Project ID (uint)\n- command_name: Command name (string)\n- command_params: Command parameters as JSON object (jsonb)\n- verify_params: Verification parameters as JSON object (jsonb)\n- is_success: Success status (boolean)\n\nOnly provided fields will be updated. Returns the updated system command record."
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteSystemCommand - DELETE /system-command/:id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/system-command/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"system-command",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "System command ID to delete"
+								}
+							]
+						},
+						"description": "Delete a system command record by ID.\n\nPath Parameters:\n- id: System command ID (required)\n\nReturns a success message upon successful deletion."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
+

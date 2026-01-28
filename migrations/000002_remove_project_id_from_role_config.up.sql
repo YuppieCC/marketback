@@ -1,0 +1,1 @@
+ALTER TABLE role_config DROP COLUMN IF EXISTS project_id; 

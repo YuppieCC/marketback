@@ -1,0 +1,1357 @@
+{
+	"info": {
+		"_postman_id": "meteoradbc-config-collection",
+		"name": "MarketControl API - Meteoradbc Config",
+		"description": "API collection for Meteoradbc Configuration Management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "meteoradbc-config"
+	},
+	"item": [
+		{
+			"name": "Meteoradbc Config",
+			"item": [
+				{
+					"name": "List All Configs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-config/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-config",
+								""
+							]
+						},
+						"description": "Get all meteoradbc configurations"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Config by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-config/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-config",
+								"1"
+							]
+						},
+						"description": "Get a specific meteoradbc configuration by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Config by Pool Address",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-config/pool/{{pool_address}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-config",
+								"pool",
+								"{{pool_address}}"
+							]
+						},
+						"description": "Get a meteoradbc configuration by pool address"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Config",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"creator\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"pool_config\": \"Config1234567890123456789012345678901234567890\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"pool_base_token_account\": \"BaseTokenAccount123456789012345678901234567890\",\n    \"pool_quote_token_account\": \"QuoteTokenAccount123456789012345678901234567890\",\n    \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-config/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-config",
+								""
+							]
+						},
+						"description": "Create a new meteoradbc configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Config",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"creator\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"pool_config\": \"UpdatedConfig123456789012345678901234567890\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"pool_base_token_account\": \"UpdatedBaseTokenAccount123456789012345678901234567890\",\n    \"pool_quote_token_account\": \"UpdatedQuoteTokenAccount123456789012345678901234567890\",\n    \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-config/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-config",
+								"1"
+							]
+						},
+						"description": "Update an existing meteoradbc configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Config Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"inactive\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-config/1/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-config",
+								"1",
+								"status"
+							]
+						},
+						"description": "Update the status of a meteoradbc configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Config",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-config/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-config",
+								"1"
+							]
+						},
+						"description": "Delete a meteoradbc configuration"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meteoracpmm Config",
+			"item": [
+				{
+					"name": "List All Configs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoracpmm-config/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoracpmm-config",
+								""
+							]
+						},
+						"description": "Get all meteoracpmm configurations"
+					},
+					"response": []
+				},
+				{
+					"name": "List Configs by Slice",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoracpmm-config/pool/slice?page=1&page_size=10&order_field=id&order_type=desc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoracpmm-config",
+								"pool",
+								"slice"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "order_field",
+									"value": "id"
+								},
+								{
+									"key": "order_type",
+									"value": "desc"
+								}
+							]
+						},
+						"description": "Get paginated list of meteoracpmm configurations"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Config by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoracpmm-config/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoracpmm-config",
+								"1"
+							]
+						},
+						"description": "Get a specific meteoracpmm configuration by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Config by Pool Address",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoracpmm-config/pool/{{pool_address}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoracpmm-config",
+								"pool",
+								"{{pool_address}}"
+							]
+						},
+						"description": "Get a meteoracpmm configuration by pool address"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Config",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"dbc_pool_address\": \"DbcPoolAddress123456789012345678901234567890\",\n    \"creator\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"pool_base_token_account\": \"BaseTokenAccount123456789012345678901234567890\",\n    \"pool_quote_token_account\": \"QuoteTokenAccount123456789012345678901234567890\",\n    \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/meteoracpmm-config/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoracpmm-config",
+								""
+							]
+						},
+						"description": "Create a new meteoracpmm configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Config",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"dbc_pool_address\": \"UpdatedDbcPoolAddress123456789012345678901234567890\",\n    \"creator\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"pool_base_token_account\": \"UpdatedBaseTokenAccount123456789012345678901234567890\",\n    \"pool_quote_token_account\": \"UpdatedQuoteTokenAccount123456789012345678901234567890\",\n    \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/meteoracpmm-config/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoracpmm-config",
+								"1"
+							]
+						},
+						"description": "Update an existing meteoracpmm configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Config Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"inactive\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/meteoracpmm-config/1/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoracpmm-config",
+								"1",
+								"status"
+							]
+						},
+						"description": "Update the status of a meteoracpmm configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Config",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoracpmm-config/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoracpmm-config",
+								"1"
+							]
+						},
+						"description": "Delete a meteoracpmm configuration"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meteoradbc Holder",
+			"item": [
+				{
+					"name": "List All Holders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-holder",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-holder"
+							]
+						},
+						"description": "Get all meteoradbc holders"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Holder by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-holder/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-holder",
+								"1"
+							]
+						},
+						"description": "Get a specific meteoradbc holder by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Holder",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"holder_type\": \"pool\",\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"last_slot\": 123456789,\n    \"start_slot\": 123456000,\n    \"last_timestamp\": 1640995200,\n    \"start_timestamp\": 1640995100,\n    \"end_signature\": \"EndSignature1234567890123456789012345678901234567890\",\n    \"start_signature\": \"StartSignature1234567890123456789012345678901234567890\",\n    \"base_change\": 1000.5,\n    \"quote_change\": 2000.75,\n    \"sol_change\": 5.25,\n    \"tx_count\": 10\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-holder",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-holder"
+							]
+						},
+						"description": "Create a new meteoradbc holder"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Holder",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"holder_type\": \"pool\",\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"last_slot\": 123456800,\n    \"start_slot\": 123456000,\n    \"last_timestamp\": 1640995300,\n    \"start_timestamp\": 1640995100,\n    \"end_signature\": \"UpdatedEndSignature1234567890123456789012345678901234567890\",\n    \"start_signature\": \"UpdatedStartSignature1234567890123456789012345678901234567890\",\n    \"base_change\": 1500.5,\n    \"quote_change\": 2500.75,\n    \"sol_change\": 7.25,\n    \"tx_count\": 15\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-holder/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-holder",
+								"1"
+							]
+						},
+						"description": "Update an existing meteoradbc holder"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Holder",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-holder/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-holder",
+								"1"
+							]
+						},
+						"description": "Delete a meteoradbc holder"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Holders",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"holder_type\": \"pool\",\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-holder/filter",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-holder",
+								"filter"
+							]
+						},
+						"description": "Filter meteoradbc holders based on criteria"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meteoradbc Swap",
+			"item": [
+				{
+					"name": "List All Swaps",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-swap",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-swap"
+							]
+						},
+						"description": "Get all meteoradbc swaps"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Swap by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-swap/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-swap",
+								"1"
+							]
+						},
+						"description": "Get a specific meteoradbc swap by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Swap",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slot\": 123456789,\n    \"timestamp\": 1640995200,\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"signature\": \"SwapSignature1234567890123456789012345678901234567890\",\n    \"fee\": 0.001,\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"trader_base_change\": 100.5,\n    \"trader_quote_change\": 200.75,\n    \"trader_sol_change\": 0.1,\n    \"pool_base_change\": -100.5,\n    \"pool_quote_change\": -200.75\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-swap",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-swap"
+							]
+						},
+						"description": "Create a new meteoradbc swap"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Swap",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slot\": 123456800,\n    \"timestamp\": 1640995300,\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"signature\": \"UpdatedSwapSignature1234567890123456789012345678901234567890\",\n    \"fee\": 0.002,\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"trader_base_change\": 150.5,\n    \"trader_quote_change\": 250.75,\n    \"trader_sol_change\": 0.15,\n    \"pool_base_change\": -150.5,\n    \"pool_quote_change\": -250.75\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-swap/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-swap",
+								"1"
+							]
+						},
+						"description": "Update an existing meteoradbc swap"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Swap",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-swap/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-swap",
+								"1"
+							]
+						},
+						"description": "Delete a meteoradbc swap"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Swaps",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"signature\": \"SwapSignature1234567890123456789012345678901234567890\",\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoradbc-swap/filter",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoradbc-swap",
+								"filter"
+							]
+						},
+						"description": "Filter meteoradbc swaps based on criteria"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meteoracpmm Holder",
+			"item": [
+				{
+					"name": "List All Holders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-holder",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-holder"
+							]
+						},
+						"description": "Get all meteoracpmm holders"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Holder by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-holder/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-holder",
+								"1"
+							]
+						},
+						"description": "Get a specific meteoracpmm holder by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Holder",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"holder_type\": \"pool\",\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"last_slot\": 123456789,\n    \"start_slot\": 123456000,\n    \"last_timestamp\": 1640995200,\n    \"start_timestamp\": 1640995100,\n    \"end_signature\": \"EndSignature1234567890123456789012345678901234567890\",\n    \"start_signature\": \"StartSignature1234567890123456789012345678901234567890\",\n    \"base_change\": 1000.5,\n    \"quote_change\": 2000.75,\n    \"sol_change\": 5.25,\n    \"tx_count\": 10\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-holder",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-holder"
+							]
+						},
+						"description": "Create a new meteoracpmm holder"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Holder",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"holder_type\": \"pool\",\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"last_slot\": 123456800,\n    \"start_slot\": 123456000,\n    \"last_timestamp\": 1640995300,\n    \"start_timestamp\": 1640995100,\n    \"end_signature\": \"UpdatedEndSignature1234567890123456789012345678901234567890\",\n    \"start_signature\": \"UpdatedStartSignature1234567890123456789012345678901234567890\",\n    \"base_change\": 1500.5,\n    \"quote_change\": 2500.75,\n    \"sol_change\": 7.25,\n    \"tx_count\": 15\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-holder/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-holder",
+								"1"
+							]
+						},
+						"description": "Update an existing meteoracpmm holder"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Holder",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-holder/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-holder",
+								"1"
+							]
+						},
+						"description": "Delete a meteoracpmm holder"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Holders",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"holder_type\": \"pool\",\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-holder/filter",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-holder",
+								"filter"
+							]
+						},
+						"description": "Filter meteoracpmm holders based on criteria"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Holder by Project ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"role_type\": \"pool\",\n    \"order_field\": \"base_change\",\n    \"order_type\": \"desc\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-holder/project/1?page=1&page_size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-holder",
+								"project",
+								"1"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get meteoracpmm holders by project ID with role type filter"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meteoracpmm Swap",
+			"item": [
+				{
+					"name": "List All Swaps",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-swap",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-swap"
+							]
+						},
+						"description": "Get all meteoracpmm swaps"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Swap by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-swap/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-swap",
+								"1"
+							]
+						},
+						"description": "Get a specific meteoracpmm swap by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Swap",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slot\": 123456789,\n    \"timestamp\": 1640995200,\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"signature\": \"SwapSignature1234567890123456789012345678901234567890\",\n    \"fee\": 0.001,\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"trader_base_change\": 100.5,\n    \"trader_quote_change\": 200.75,\n    \"trader_sol_change\": 0.1,\n    \"pool_base_change\": -100.5,\n    \"pool_quote_change\": -200.75\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-swap",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-swap"
+							]
+						},
+						"description": "Create a new meteoracpmm swap"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Swap",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slot\": 123456800,\n    \"timestamp\": 1640995300,\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"signature\": \"UpdatedSwapSignature1234567890123456789012345678901234567890\",\n    \"fee\": 0.002,\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"trader_base_change\": 150.5,\n    \"trader_quote_change\": 250.75,\n    \"trader_sol_change\": 0.15,\n    \"pool_base_change\": -150.5,\n    \"pool_quote_change\": -250.75\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-swap/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-swap",
+								"1"
+							]
+						},
+						"description": "Update an existing meteoracpmm swap"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Swap",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-swap/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-swap",
+								"1"
+							]
+						},
+						"description": "Delete a meteoracpmm swap"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Swaps",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"signature\": \"SwapSignature1234567890123456789012345678901234567890\",\n    \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"base_mint\": \"So11111111111111111111111111111111111111112\",\n    \"quote_mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-swap/filter",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-swap",
+								"filter"
+							]
+						},
+						"description": "Filter meteoracpmm swaps based on criteria"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Swaps by Pool ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/meteoracpmm-swap/pool/1?page=1&page_size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meteoracpmm-swap",
+								"pool",
+								"1"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get meteoracpmm swaps by pool ID with pagination"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meteoradbc Pool Stat",
+			"item": [
+				{
+					"name": "List All Pool Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-pool-stat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-pool-stat"
+							]
+						},
+						"description": "Get all meteoradbc pool statistics"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pool Stat by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-pool-stat/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-pool-stat",
+								"1"
+							]
+						},
+						"description": "Get a specific meteoradbc pool stat by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Pool Stat",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"base_amount\": 1000000000,\n    \"quote_amount\": 5000000000,\n    \"base_amount_readable\": 1000.0,\n    \"quote_amount_readable\": 5000.0,\n    \"market_value\": 10000.0,\n    \"price\": 0.2,\n    \"slot\": 123456789,\n    \"block_time\": \"2024-01-01T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-pool-stat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-pool-stat"
+							]
+						},
+						"description": "Create a new meteoradbc pool stat"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Pool Stat",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pool_address\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"base_amount\": 1200000000,\n    \"quote_amount\": 6000000000,\n    \"base_amount_readable\": 1200.0,\n    \"quote_amount_readable\": 6000.0,\n    \"market_value\": 12000.0,\n    \"price\": 0.2,\n    \"slot\": 123456800,\n    \"block_time\": \"2024-01-01T01:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-pool-stat/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-pool-stat",
+								"1"
+							]
+						},
+						"description": "Update an existing meteoradbc pool stat"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Pool Stat",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-pool-stat/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-pool-stat",
+								"1"
+							]
+						},
+						"description": "Delete a meteoradbc pool stat"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pool Stats by Pool Address",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-pool-stat/by-pool-address/{{pool_address}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-pool-stat",
+								"by-pool-address",
+								"{{pool_address}}"
+							]
+						},
+						"description": "Get meteoradbc pool stats by pool address"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pool Stat by Project ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/meteoradbc-pool-stat/by-project/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"meteoradbc-pool-stat",
+								"by-project",
+								"1"
+							]
+						},
+						"description": "Get meteoradbc pool stat by project ID"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "pool_address",
+			"value": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+			"type": "string"
+		}
+	]
+}

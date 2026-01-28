@@ -1,0 +1,1 @@
+*/15 * * * * cd /app && go run schedule/stat_record.go

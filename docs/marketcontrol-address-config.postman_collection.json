@@ -1,0 +1,494 @@
+{
+	"info": {
+		"_postman_id": "address-config-collection-id",
+		"name": "MarketControl - Address Config API",
+		"description": "API collection for Address Configuration management in Market Control System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4855723"
+	},
+	"item": [
+		{
+			"name": "Address Config Management",
+			"description": "CRUD operations for address configurations",
+			"item": [
+				{
+					"name": "Create Address Config",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"SomeWalletAddress123456789...\",\n    \"mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"is_buy_allowed\": true,\n    \"is_sell_allowed\": false,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/address-config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config"
+							]
+						},
+						"description": "Create a new address configuration with trading permissions"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"address\": \"SomeWalletAddress123456789...\",\n    \"mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"is_buy_allowed\": true,\n    \"is_sell_allowed\": false,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 2\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/address-config",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"address-config"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 1,\n    \"address\": \"SomeWalletAddress123456789...\",\n    \"mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"is_buy_allowed\": true,\n    \"is_sell_allowed\": false,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 2,\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:30:00Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Address Config by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/address-config/id/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config",
+								"id",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Address Config ID"
+								}
+							]
+						},
+						"description": "Get a specific address configuration by ID"
+					}
+				},
+				{
+					"name": "List All Address Configs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/address-config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config"
+							]
+						},
+						"description": "Get all address configurations"
+					}
+				},
+				{
+					"name": "Filter by Address",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/address-config?address=SomeWalletAddress123456789...",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config"
+							],
+							"query": [
+								{
+									"key": "address",
+									"value": "SomeWalletAddress123456789...",
+									"description": "Filter by specific address"
+								}
+							]
+						},
+						"description": "Get address configurations filtered by address"
+					}
+				},
+				{
+					"name": "Filter by Mint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/address-config?mint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config"
+							],
+							"query": [
+								{
+									"key": "mint",
+									"value": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+									"description": "Filter by specific mint (token)"
+								}
+							]
+						},
+						"description": "Get address configurations filtered by mint/token"
+					}
+				},
+				{
+					"name": "Update Address Config",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"UpdatedWalletAddress123456789...\",\n    \"mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\n    \"is_buy_allowed\": false,\n    \"is_sell_allowed\": true,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/address-config/id/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config",
+								"id",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Address Config ID to update"
+								}
+							]
+						},
+						"description": "Update an existing address configuration"
+					}
+				},
+				{
+					"name": "Delete Address Config",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/address-config/id/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config",
+								"id",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Address Config ID to delete"
+								}
+							]
+						},
+						"description": "Delete an address configuration"
+					}
+				},
+				{
+					"name": "Create or Update Address Config",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"mint\": \"aBvBfA1gDFYEJHYQCQUpznWaegjRy5SwS92wb8dwtP3\",\n    \"is_buy_allowed\": false,\n    \"is_sell_allowed\": true,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/address-config/create-or-update",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config",
+								"create-or-update"
+							]
+						},
+						"description": "Create a new address configuration or update existing one based on address and mint combination. If a record with the same address and mint exists, it will be updated; otherwise, a new record will be created."
+					},
+					"response": [
+						{
+							"name": "Create Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"mint\": \"aBvBfA1gDFYEJHYQCQUpznWaegjRy5SwS92wb8dwtP3\",\n    \"is_buy_allowed\": false,\n    \"is_sell_allowed\": true,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 1\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/address-config/create-or-update",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"address-config",
+										"create-or-update"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 15,\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"mint\": \"aBvBfA1gDFYEJHYQCQUpznWaegjRy5SwS92wb8dwtP3\",\n    \"is_buy_allowed\": false,\n    \"is_sell_allowed\": true,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 1,\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:30:00Z\"\n}"
+						},
+						{
+							"name": "Update Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"mint\": \"aBvBfA1gDFYEJHYQCQUpznWaegjRy5SwS92wb8dwtP3\",\n    \"is_buy_allowed\": true,\n    \"is_sell_allowed\": false,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 5\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/address-config/create-or-update",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"address-config",
+										"create-or-update"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 15,\n    \"address\": \"Gh8jEJqpoWwkJRXoRCqWrWrT68B9KAJrrjySNLYt9r7Q\",\n    \"mint\": \"aBvBfA1gDFYEJHYQCQUpznWaegjRy5SwS92wb8dwtP3\",\n    \"is_buy_allowed\": true,\n    \"is_sell_allowed\": false,\n    \"is_trade_allowed\": true,\n    \"trade_priority_rate\": 5,\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:35:00Z\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Advanced Queries",
+			"description": "Advanced query operations for address configurations",
+			"item": [
+				{
+					"name": "Get Config by Address and Mint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/address-config/by-address-mint/:address/:mint",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config",
+								"by-address-mint",
+								":address",
+								":mint"
+							],
+							"variable": [
+								{
+									"key": "address",
+									"value": "SomeWalletAddress123456789...",
+									"description": "Wallet address"
+								},
+								{
+									"key": "mint",
+									"value": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+									"description": "Token mint address"
+								}
+							]
+						},
+						"description": "Get address configuration by specific address and mint combination"
+					}
+				},
+				{
+					"name": "Get Configs by Role ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/address-config/role/:role_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config",
+								"role",
+								":role_id"
+							],
+							"variable": [
+								{
+									"key": "role_id",
+									"value": "123",
+									"description": "Role ID"
+								}
+							]
+						},
+						"description": "Get all address configurations associated with a specific role"
+					}
+				},
+				{
+					"name": "Filter Configs by Role and Mint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"role_id\": 123,\n    \"mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/address-config/filter",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"address-config",
+								"filter"
+							]
+						},
+						"description": "Filter address configurations by role_id and mint, returns address-permission mapping"
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"role_id\": 123,\n    \"mint\": \"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/address-config/filter",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"address-config",
+										"filter"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"SomeWalletAddress123456789...\": {\n        \"is_buy_allowed\": true,\n        \"is_sell_allowed\": false,\n        \"is_trade_allowed\": true,\n        \"trade_priority_rate\": 2\n    },\n    \"AnotherWalletAddress789...\": {\n        \"is_buy_allowed\": false,\n        \"is_sell_allowed\": true,\n        \"is_trade_allowed\": true,\n        \"trade_priority_rate\": 1\n    }\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string",
+			"description": "Base URL for the MarketControl API"
+		}
+	]
+}

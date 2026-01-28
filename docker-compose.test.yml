@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  app_intranet_8081:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: app_intranet_8081
+    ports:
+      - "8081:8080"
+    environment:
+      - DB_HOST=postgres_intranet_8081
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=marketcontrol_test
+      - DB_PORT=5432
+      - PORT=8080
+      - ENCRYPTPASSWORD=4LAx4rxfcT78WADGh2pa
+      - HELIUS_API_KEY=b94d046f-3bcd-45d9-85d9-543118c6dd3d
+      - DEFAULT_SOLANA_RPC=https://mainnet.helius-rpc.com/?api-key=b94d046f-3bcd-45d9-85d9-543118c6dd3d
+      - RABBITMQ_HOST=rabbitmq_test
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - ALLOWED_ORIGINS=http://localhost:3010,http://localhost:3011,http://localhost:3013,http://192.168.1.114:3010
+    volumes:
+      - ./:/app
+      - go-mod-cache:/go/pkg/mod
+    depends_on:
+      postgres_intranet_8081:
+        condition: service_healthy
+      rabbitmq_test:
+        condition: service_healthy
+    networks:
+      - app-test-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres_intranet_8081:
+    image: postgres:15-alpine
+    container_name: postgres_intranet_8081
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: marketcontrol_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - app-test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  rabbitmq_test:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq_test
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app-test-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  worker_meteora_monitor_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: worker_meteora_monitor_test
+    environment:
+      - DB_HOST=postgres_intranet_8081
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=marketcontrol_test
+      - DB_PORT=5432
+      - HELIUS_API_KEY=b94d046f-3bcd-45d9-85d9-543118c6dd3d
+      - DEFAULT_SOLANA_WSS=wss://orbital-proportionate-hexagon.solana-mainnet.quiknode.pro/85fb75456c5fe6fcc2a407cadf4e9baf8f3a685e/
+      - RABBITMQ_HOST=rabbitmq_test
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    volumes:
+      - ./:/app
+      - go-mod-cache:/go/pkg/mod
+    depends_on:
+      postgres_intranet_8081:
+        condition: service_healthy
+      rabbitmq_test:
+        condition: service_healthy
+      app_intranet_8081:
+        condition: service_healthy
+    command: go run cmd/worker/main.go
+    restart: unless-stopped
+    networks:
+      - app-test-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # monitor_pool_stat_intranet_8081:
+  #   build: 
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: monitor_pool_stat_intranet_8081
+  #   environment:
+  #     - DB_HOST=postgres_intranet_8081
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=postgres
+  #     - DB_NAME=marketcontrol_test
+  #     - DB_PORT=5432
+  #     - ENCRYPTPASSWORD=4LAx4rxfcT78WADGh2pa
+  #     - DEFAULT_SOLANA_RPC=https://responsive-prettiest-star.solana-mainnet.quiknode.pro/a89ffa3856d2b33cbe2601c466ca8c884c9f3e3b/
+  #   volumes:
+  #     - ./:/app
+  #     - go-mod-cache:/go/pkg/mod
+  #   depends_on:
+  #     postgres_intranet_8081:
+  #       condition: service_healthy
+  #     app_intranet_8081:
+  #       condition: service_healthy
+  #   command: go run schedule/pool_stat.go
+  #   restart: unless-stopped
+  #   networks:
+  #     - app-test-network
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+
+  # monitor_transactions_stat_intranet_8081:
+  #   build: 
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: monitor_transactions_stat_intranet_8081
+  #   environment:
+  #     - DB_HOST=postgres_intranet_8081
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=postgres
+  #     - DB_NAME=marketcontrol_test
+  #     - DB_PORT=5432
+  #     - ENCRYPTPASSWORD=4LAx4rxfcT78WADGh2pa
+  #     - HELIUS_API_KEY=2018a247-dea1-4122-89d4-4bee15ce09fc
+  #     - DEFAULT_SOLANA_RPC=https://responsive-prettiest-star.solana-mainnet.quiknode.pro/a89ffa3856d2b33cbe2601c466ca8c884c9f3e3b/
+  #   volumes:
+  #     - ./:/app
+  #     - go-mod-cache:/go/pkg/mod
+  #   depends_on:
+  #     postgres_intranet_8081:
+  #       condition: service_healthy
+  #     app_intranet_8081:
+  #       condition: service_healthy
+  #   command: go run schedule/transactions_stat.go
+  #   restart: unless-stopped
+  #   networks:
+  #     - app-test-network
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+
+networks:
+  app-test-network:
+    driver: bridge
+
+volumes:
+  postgres_test_data:
+    name: marketcontrol_postgres_test_data
+    driver: local
+  go-mod-cache:
+    name: marketcontrol_go_mod_cache
+    driver: local

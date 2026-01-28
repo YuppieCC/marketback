@@ -1,0 +1,233 @@
+version: '3.8'
+
+services:
+  app_pro:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: app_pro
+    ports:
+      - "8081:8080"
+    environment:
+      - DB_HOST=postgres_pro
+      - DB_USER=postgres
+      - DB_PASSWORD=7fkkNDmM6VX2
+      - DB_NAME=marketcontrol_pro
+      - DB_PORT=5432
+      - PORT=8080
+      - ENCRYPTPASSWORD=
+      - HELIUS_API_KEY=b82ff75d-c23e-427f-9d89-9779deddb70d
+      - DEFAULT_SOLANA_RPC=https://bitter-bitter-liquid.solana-mainnet.quiknode.pro/42dc87e6ee0d0ed68ccc7b50382f540f410d637e/
+    volumes:
+      - ./:/app
+      - go-mod-cache:/go/pkg/mod
+    depends_on:
+      postgres_pro:
+        condition: service_healthy
+    networks:
+      - app-pro-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres_pro:
+    image: postgres:15-alpine
+    container_name: postgres_pro
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 7fkkNDmM6VX2
+      POSTGRES_DB: marketcontrol_pro
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_pro_data:/var/lib/postgresql/data
+    networks:
+      - app-pro-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  monitor_wash_task_pro:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: monitor_wash_task_pro
+    environment:
+      - DB_HOST=postgres_pro
+      - DB_USER=postgres
+      - DB_PASSWORD=7fkkNDmM6VX2
+      - DB_NAME=marketcontrol_pro
+      - DB_PORT=5432
+      - ENCRYPTPASSWORD=
+    volumes:
+      - ./:/app
+      - go-mod-cache:/go/pkg/mod
+    depends_on:
+      postgres_pro:
+        condition: service_healthy
+      app_pro:
+        condition: service_healthy
+    command: go run schedule/wash_task.go
+    restart: unless-stopped
+    networks:
+      - app-pro-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # monitor_token_stat_pro:
+  #   build: 
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: monitor_token_stat_pro
+  #   environment:
+  #     - DB_HOST=postgres_pro
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=7fkkNDmM6VX2
+  #     - DB_NAME=marketcontrol_pro
+  #     - DB_PORT=5432
+  #     - ENCRYPTPASSWORD=
+  #     - DEFAULT_SOLANA_RPC=https://bitter-bitter-liquid.solana-mainnet.quiknode.pro/42dc87e6ee0d0ed68ccc7b50382f540f410d637e/
+  #   volumes:
+  #     - ./:/app
+  #     - go-mod-cache:/go/pkg/mod
+  #   depends_on:
+  #     postgres_pro:
+  #       condition: service_healthy
+  #     app_pro:
+  #       condition: service_healthy
+  #   command: go run schedule/token_stat.go
+  #   restart: unless-stopped
+  #   networks:
+  #     - app-pro-network
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+  
+  monitor_pool_stat_pro:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: monitor_pool_stat_pro
+    environment:
+      - DB_HOST=postgres_pro
+      - DB_USER=postgres
+      - DB_PASSWORD=7fkkNDmM6VX2
+      - DB_NAME=marketcontrol_pro
+      - DB_PORT=5432
+      - ENCRYPTPASSWORD=
+      - DEFAULT_SOLANA_RPC=https://bitter-bitter-liquid.solana-mainnet.quiknode.pro/42dc87e6ee0d0ed68ccc7b50382f540f410d637e/
+    volumes:
+      - ./:/app
+      - go-mod-cache:/go/pkg/mod
+    depends_on:
+      postgres_pro:
+        condition: service_healthy
+      app_pro:
+        condition: service_healthy
+    command: go run schedule/pool_stat.go
+    restart: unless-stopped
+    networks:
+      - app-pro-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  monitor_transactions_stat_pro:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: monitor_transactions_stat_pro
+    environment:
+      - DB_HOST=postgres_pro
+      - DB_USER=postgres
+      - DB_PASSWORD=7fkkNDmM6VX2
+      - DB_NAME=marketcontrol_pro
+      - DB_PORT=5432
+      - ENCRYPTPASSWORD=
+      - HELIUS_API_KEY=b82ff75d-c23e-427f-9d89-9779deddb70d
+      - DEFAULT_SOLANA_RPC=https://bitter-bitter-liquid.solana-mainnet.quiknode.pro/42dc87e6ee0d0ed68ccc7b50382f540f410d637e/
+    volumes:
+      - ./:/app
+      - go-mod-cache:/go/pkg/mod
+    depends_on:
+      postgres_pro:
+        condition: service_healthy
+      app_pro:
+        condition: service_healthy
+    command: go run schedule/transactions_stat.go
+    restart: unless-stopped
+    networks:
+      - app-pro-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # monitor_project_settle_pro:
+  #   build: 
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: monitor_project_settle_pro
+  #   environment:
+  #     - DB_HOST=postgres_pro
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=7fkkNDmM6VX2
+  #     - DB_NAME=marketcontrol_pro
+  #     - DB_PORT=5432
+  #     - ENCRYPTPASSWORD=
+  #     - DEFAULT_SOLANA_RPC=https://bitter-bitter-liquid.solana-mainnet.quiknode.pro/42dc87e6ee0d0ed68ccc7b50382f540f410d637e/
+  #   volumes:
+  #     - ./:/app
+  #     - go-mod-cache:/go/pkg/mod
+  #   depends_on:
+  #     postgres_pro:
+  #       condition: service_healthy
+  #     app_pro:
+  #       condition: service_healthy
+  #   working_dir: /app
+  #   command: go run schedule/stat_record.go
+  #   restart: unless-stopped
+  #   networks:
+  #     - app-pro-network
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+
+networks:
+  app-pro-network:
+    driver: bridge
+
+volumes:
+  postgres_pro_data:
+    name: marketcontrol_postgres_pro_data
+    driver: local
+  go-mod-cache:
+    name: marketcontrol_go_mod_cache
+    driver: local

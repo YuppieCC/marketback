@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketcontrol_app
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=your_db_host_here
+      - DB_USER=your_db_user_here
+      - DB_PASSWORD=your_password_here
+      - DB_NAME=marketcontrol
+      - DB_PORT=5432
+      - PORT=8080
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: marketcontrol_postgres
+    environment:
+      - POSTGRES_USER=your_db_user_here
+      - POSTGRES_PASSWORD=your_password_here
+      - POSTGRES_DB=marketcontrol
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge 
