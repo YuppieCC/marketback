@@ -22,7 +22,7 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
-      - ALLOWED_ORIGINS=http://localhost:3010,http://localhost:3011,http://localhost:3013,http://192.168.3.20:3010
+      - ALLOWED_ORIGINS=http://localhost:3010,http://localhost:3011,http://localhost:3013,http://192.168.3.36:3010
     volumes:
       - ./:/app
       - go-mod-cache:/go/pkg/mod
