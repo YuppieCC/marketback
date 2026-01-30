@@ -17,12 +17,12 @@ services:
       - PORT=8080
       - ENCRYPTPASSWORD=4LAx4rxfcT78WADGh2pa
       - HELIUS_API_KEY=b94d046f-3bcd-45d9-85d9-543118c6dd3d
-      - DEFAULT_SOLANA_RPC=https://mainnet.helius-rpc.com/?api-key=b94d046f-3bcd-45d9-85d9-543118c6dd3d
+      - DEFAULT_SOLANA_RPC=https://mainnet.helius-rpc.com/?api-key=8db54e39-7313-4c58-be62-916d3ee14627
       - RABBITMQ_HOST=rabbitmq_intranet_3010
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
-      - ALLOWED_ORIGINS=http://localhost:3010,http://localhost:3011,http://localhost:3013,http://192.168.3.36:3010
+      - ALLOWED_ORIGINS=http://localhost:3010,http://localhost:3011,http://localhost:3013,http://192.168.10.7:3010
     volumes:
       - ./:/app
       - go-mod-cache:/go/pkg/mod
@@ -107,8 +107,8 @@ services:
       - DB_NAME=marketcontrol_test
       - DB_PORT=5432
       - HELIUS_API_KEY=b94d046f-3bcd-45d9-85d9-543118c6dd3d
-      - DEFAULT_SOLANA_RPC=https://orbital-proportionate-hexagon.solana-mainnet.quiknode.pro/85fb75456c5fe6fcc2a407cadf4e9baf8f3a685e/
-      - DEFAULT_SOLANA_WSS=wss://orbital-proportionate-hexagon.solana-mainnet.quiknode.pro/85fb75456c5fe6fcc2a407cadf4e9baf8f3a685e/
+      - DEFAULT_SOLANA_RPC=https://alpha-polished-putty.solana-mainnet.quiknode.pro/f483a69da2e4db2a6cfc9115a27ad7c0a4527df9/
+      - DEFAULT_SOLANA_WSS=wss://alpha-polished-putty.solana-mainnet.quiknode.pro/f483a69da2e4db2a6cfc9115a27ad7c0a4527df9/
       - RABBITMQ_HOST=rabbitmq_intranet_3010
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
