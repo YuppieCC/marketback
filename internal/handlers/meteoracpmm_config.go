@@ -64,6 +64,22 @@ func GetMeteoracpmmConfigByPoolAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, config)
 }
 
+// GetLatestMeteoracpmmConfigByCreator returns the meteoracpmm configuration with the latest ID for the given creator
+func GetLatestMeteoracpmmConfigByCreator(c *gin.Context) {
+	creator := c.Param("creator")
+	if creator == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Creator is required"})
+		return
+	}
+
+	var config models.MeteoracpmmConfig
+	if err := dbconfig.DB.Where("creator = ?", creator).Order("id DESC").First(&config).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+		return
+	}
+	c.JSON(http.StatusOK, config)
+}
+
 // GetMeteoracpmmConfigByCreator returns a meteoracpmm configuration by creator
 func GetMeteoracpmmConfigByCreator(c *gin.Context) {
 	creator := c.Param("creator")

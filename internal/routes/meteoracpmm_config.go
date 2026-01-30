@@ -18,6 +18,9 @@ func SetupMeteoracpmmConfigRoutes(r *gin.Engine) {
 		// Get meteoracpmm configuration by mint address
 		meteoracpmm.GET("/mint/:mint_address", handlers.GetMeteoracpmmConfigByMint)
 
+		// Get latest meteoracpmm configuration by creator (by ID desc)
+		meteoracpmm.GET("/creator/latest/:creator", handlers.GetLatestMeteoracpmmConfigByCreator)
+
 		// Get meteoracpmm configuration by creator
 		meteoracpmm.GET("/creator/:creator", handlers.GetMeteoracpmmConfigByCreator)
 
