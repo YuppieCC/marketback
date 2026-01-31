@@ -7,8 +7,9 @@ import (
 type RoleConfig struct {
 	ID             uint          `gorm:"primarykey" json:"id"`
 	RoleName       string        `gorm:"size:64;not null" json:"role_name"`
-	UpdateInterval float64        `json:"update_interval"`
+	UpdateInterval float64       `json:"update_interval"`
 	UpdateEnabled  bool          `json:"update_enabled" gorm:"default:true"`
+	Hidden         bool          `json:"hidden" gorm:"column:hidden;default:false"`
 	LastUpdateAt   *time.Time    `json:"last_update_at"`
 	CreatedAt      time.Time     `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt      time.Time     `json:"updated_at" gorm:"autoUpdateTime"`

@@ -11,6 +11,7 @@ import (
 	dbconfig "marketcontrol/pkg/config"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // ProjectSettleResp represents the response structure for project settle profit ranking
@@ -259,4 +260,140 @@ func VestingReview(c *gin.Context) {
 		"pool_remove_amount": sumPoolRemoveAmount,
 		"data":               projects,
 	})
+}
+
+// GetErrorVesting returns ProjectConfigs whose Vesting matches error conditions:
+// status == "failed" OR (status == "done" AND pool_remove_amount == 0).
+// Uses batched iteration to avoid loading all ProjectConfig into memory.
+// Returned data format matches VestingReview (ProjectConfig with Token preloaded).
+func GetErrorVesting(c *gin.Context) {
+	const batchSize = 200
+	var matchedIDs []uint
+	var batch []models.ProjectConfig
+
+	err := dbconfig.DB.
+		Where("vesting IS NOT NULL").
+		Order("id asc").
+		FindInBatches(&batch, batchSize, func(tx *gorm.DB, batchNum int) error {
+			for i := range batch {
+				pc := &batch[i]
+				if len(pc.Vesting) == 0 || string(pc.Vesting) == "null" {
+					continue
+				}
+				var m map[string]interface{}
+				if err := json.Unmarshal(pc.Vesting, &m); err != nil {
+					continue
+				}
+				status, _ := m["status"].(string)
+				poolRemoveAmount := 0.0
+				if prm, ok := m["pool_remove_amount"].(float64); ok {
+					poolRemoveAmount = prm
+				}
+				if status == "failed" || (status == "done" && poolRemoveAmount == 0) {
+					matchedIDs = append(matchedIDs, pc.ID)
+				}
+			}
+			return nil
+		}).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Load full ProjectConfig with Token (same format as VestingReview data)
+	var results []models.ProjectConfig
+	if len(matchedIDs) > 0 {
+		if err := dbconfig.DB.Preload("Token").
+			Where("id IN ?", matchedIDs).
+			Order("id asc").
+			Find(&results).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": results})
+}
+
+// FixErrorVestingItem represents one item in the fix request
+type FixErrorVestingItem struct {
+	ID               uint    `json:"id" binding:"required"`
+	Status           string  `json:"status"`
+	PoolRemoveAmount float64 `json:"pool_remove_amount"`
+}
+
+// FixErrorVestingRequest represents the request body for fixing error vesting
+type FixErrorVestingRequest struct {
+	Data []FixErrorVestingItem `json:"data" binding:"required"`
+}
+
+// FixErrorVesting updates ProjectConfig.Vesting for given ids, merging in status and pool_remove_amount
+func FixErrorVesting(c *gin.Context) {
+	var req FixErrorVestingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updated := 0
+	var errMsgs []string
+
+	for _, item := range req.Data {
+		var project models.ProjectConfig
+		if err := dbconfig.DB.First(&project, item.ID).Error; err != nil {
+			errMsgs = append(errMsgs, "project id "+strconv.Itoa(int(item.ID))+" not found")
+			continue
+		}
+
+		// Parse existing Vesting or start empty
+		var m map[string]interface{}
+		if len(project.Vesting) > 0 && string(project.Vesting) != "null" {
+			if err := json.Unmarshal(project.Vesting, &m); err != nil {
+				errMsgs = append(errMsgs, "project id "+strconv.Itoa(int(item.ID))+" invalid vesting json: "+err.Error())
+				continue
+			}
+		} else {
+			m = make(map[string]interface{})
+		}
+
+		// Merge in provided fields
+		if item.Status != "" {
+			m["status"] = item.Status
+		}
+		m["pool_remove_amount"] = item.PoolRemoveAmount
+
+		newVesting, err := json.Marshal(m)
+		if err != nil {
+			errMsgs = append(errMsgs, "project id "+strconv.Itoa(int(item.ID))+" marshal: "+err.Error())
+			continue
+		}
+
+		project.Vesting = newVesting
+		if err := dbconfig.DB.Save(&project).Error; err != nil {
+			errMsgs = append(errMsgs, "project id "+strconv.Itoa(int(item.ID))+" save: "+err.Error())
+			continue
+		}
+
+		// Create SystemLog for this fix
+		sysLog := models.SystemLog{
+			ProjectID:  project.ID,
+			Level:       "INFO",
+			Message:     "修改锁仓异常数据",
+			Module:      "FixErrorVesting",
+			ErrorStack:  "",
+			Meta:        models.JSONMap{"id": item.ID, "status": item.Status, "pool_remove_amount": item.PoolRemoveAmount},
+		}
+		if err := dbconfig.DB.Create(&sysLog).Error; err != nil {
+			errMsgs = append(errMsgs, "project id "+strconv.Itoa(int(item.ID))+" create system log: "+err.Error())
+			// do not skip updated count; ProjectConfig was already updated
+		}
+		updated++
+	}
+
+	resp := gin.H{"updated_count": updated}
+	if len(errMsgs) > 0 {
+		resp["errors"] = errMsgs
+	}
+	c.JSON(http.StatusOK, resp)
 }

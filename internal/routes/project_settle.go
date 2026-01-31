@@ -11,6 +11,8 @@ func SetupProjectSettleRoutes(r *gin.Engine) {
 	projectSettle := r.Group("/project-settle")
 	{
 		projectSettle.GET("/profit-ranking", handlers.GetProjectProfitRanking)
+		projectSettle.GET("/error-vesting", handlers.GetErrorVesting)
+		projectSettle.POST("/fix-error-vesting", handlers.FixErrorVesting)
 		projectSettle.POST("/vesting-reivew", handlers.VestingReview)
 	}
 }

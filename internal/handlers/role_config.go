@@ -27,6 +27,7 @@ type RoleConfigRequest struct {
 	RoleName       string  `json:"role_name" binding:"required"`
 	UpdateInterval float64 `json:"update_interval"`
 	UpdateEnabled  bool    `json:"update_enabled"`
+	Hidden         bool    `json:"hidden"`
 }
 
 // CreateRoleConfigWithProjectRequest represents the request body for creating a role config with project relation
@@ -34,6 +35,7 @@ type CreateRoleConfigWithProjectRequest struct {
 	RoleName       string  `json:"role_name" binding:"required"`
 	UpdateInterval float64 `json:"update_interval"`
 	UpdateEnabled  bool    `json:"update_enabled"`
+	Hidden         bool    `json:"hidden"`
 	ProjectID      uint    `json:"project_id" binding:"required"`
 }
 
@@ -87,6 +89,7 @@ func CreateRoleConfig(c *gin.Context) {
 		RoleName:       request.RoleName,
 		UpdateInterval: request.UpdateInterval,
 		UpdateEnabled:  request.UpdateEnabled,
+		Hidden:         request.Hidden,
 	}
 
 	if err := dbconfig.DB.Create(&role).Error; err != nil {
@@ -116,8 +119,10 @@ func UpdateRoleConfig(c *gin.Context) {
 	if _, hasRoleName := rawJSON["role_name"]; !hasRoleName {
 		if _, hasUpdateInterval := rawJSON["update_interval"]; !hasUpdateInterval {
 			if _, hasUpdateEnabled := rawJSON["update_enabled"]; !hasUpdateEnabled {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "At least one field (role_name, update_interval, or update_enabled) must be provided"})
-				return
+				if _, hasHidden := rawJSON["hidden"]; !hasHidden {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "At least one field (role_name, update_interval, update_enabled, or hidden) must be provided"})
+					return
+				}
 			}
 		}
 	}
@@ -143,6 +148,9 @@ func UpdateRoleConfig(c *gin.Context) {
 	}
 	if updateEnabled, exists := rawJSON["update_enabled"]; exists {
 		role.UpdateEnabled = updateEnabled.(bool)
+	}
+	if hidden, exists := rawJSON["hidden"]; exists {
+		role.Hidden = hidden.(bool)
 	}
 
 	if err := dbconfig.DB.Save(&role).Error; err != nil {
@@ -637,6 +645,7 @@ func CreateRoleConfigByTemplateID(c *gin.Context) {
 		RoleName:       template.RoleName,
 		UpdateInterval: template.UpdateInterval,
 		UpdateEnabled:  template.UpdateEnabled,
+		Hidden:         false, // default when creating from template
 		LastUpdateAt:   template.LastUpdateAt,
 	}
 
