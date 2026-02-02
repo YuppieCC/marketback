@@ -13,6 +13,7 @@ func SetupProjectSettleRoutes(r *gin.Engine) {
 		projectSettle.GET("/profit-ranking", handlers.GetProjectProfitRanking)
 		projectSettle.GET("/error-vesting", handlers.GetErrorVesting)
 		projectSettle.POST("/fix-error-vesting", handlers.FixErrorVesting)
+		projectSettle.POST("/fetch-creator-balance-change", handlers.FetchCreatorBalanceChange)
 		projectSettle.POST("/vesting-reivew", handlers.VestingReview)
 	}
 }

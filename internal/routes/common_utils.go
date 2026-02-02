@@ -62,6 +62,11 @@ func SetupCommonUtilsRoutes(r *gin.Engine) {
 		account.POST("/multi-account-info", handlers.GetMultiAccountsInfo)
 	}
 
+	signatureReview := r.Group("/common_utils/signature")
+	{
+		signatureReview.POST("/address-balance-change", handlers.FetchAddressBalanceChangeFromSignature)
+	}
+
 	websocket := r.Group("/common_utils/websocket")
 	{
 		websocket.POST("/pool-monitor", handlers.ControlPoolMonitor)
