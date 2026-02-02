@@ -915,6 +915,40 @@ func GetAccountInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// FetchAddressBalanceChangeRequest represents the request body for address balance change from signature
+type FetchAddressBalanceChangeRequest struct {
+	Signature   string   `json:"signature" binding:"required"`
+	AddressList []string `json:"address_list" binding:"required"`
+	Mint        string   `json:"mint" binding:"required"` // "sol" for native SOL, or token mint address
+	Decimals    uint     `json:"decimals"`               // precision for readable amount (e.g. 9 for SOL, 6 for token)
+}
+
+// FetchAddressBalanceChangeFromSignature fetches the transaction by signature and returns balance changes for each address
+func FetchAddressBalanceChangeFromSignature(c *gin.Context) {
+	var req FetchAddressBalanceChangeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	solanaRPC := os.Getenv("DEFAULT_SOLANA_RPC")
+	if solanaRPC == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Solana RPC endpoint not configured"})
+		return
+	}
+	client := rpc.New(solanaRPC)
+	txResult, err := mcsolana.GetTransactionBySignature(client, req.Signature)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Failed to get transaction: %v", err)})
+		return
+	}
+	changes, err := mcsolana.ParseAddressBalanceChangesFromTransaction(txResult, req.AddressList, req.Mint, req.Decimals)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to parse balance changes: %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": changes})
+}
+
 // PoolMonitorRequest represents the request body for controlling pool monitoring
 type PoolMonitorRequest struct {
 	Action               string `json:"action" binding:"required"`       // "start" or "stop"

@@ -2,15 +2,20 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"marketcontrol/internal/models"
 	dbconfig "marketcontrol/pkg/config"
+	mcsolana "marketcontrol/pkg/solana"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gagliardetto/solana-go/rpc"
 	"gorm.io/gorm"
 )
 
@@ -313,7 +318,17 @@ func GetErrorVesting(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": results})
+	// Exclude records where CreatedAt < 2026-01-18 (keep only CreatedAt >= 2026-01-18)
+	minDate := time.Date(2026, 1, 18, 0, 0, 0, 0, time.UTC)
+	var filtered []models.ProjectConfig
+	for i := range results {
+		if results[i].CreatedAt.Before(minDate) {
+			continue
+		}
+		filtered = append(filtered, results[i])
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": filtered})
 }
 
 // FixErrorVestingItem represents one item in the fix request
@@ -396,4 +411,60 @@ func FixErrorVesting(c *gin.Context) {
 		resp["errors"] = errMsgs
 	}
 	c.JSON(http.StatusOK, resp)
+}
+
+// FetchCreatorBalanceChangeRequest represents the request body for fetching creator SOL balance change from a signature
+type FetchCreatorBalanceChangeRequest struct {
+	ProjectID  uint   `json:"project_id" binding:"required"`
+	Signature  string `json:"signature" binding:"required"`
+}
+
+// FetchCreatorBalanceChange gets ProjectConfig by project_id, reads creator from Vesting, then returns the creator's SOL balance change (readable) for the given signature
+func FetchCreatorBalanceChange(c *gin.Context) {
+	var req FetchCreatorBalanceChangeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var project models.ProjectConfig
+	if err := dbconfig.DB.First(&project, req.ProjectID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
+		return
+	}
+	if len(project.Vesting) == 0 || string(project.Vesting) == "null" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Project vesting is empty"})
+		return
+	}
+	var vesting map[string]interface{}
+	if err := json.Unmarshal(project.Vesting, &vesting); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid vesting json"})
+		return
+	}
+	creator, _ := vesting["creator"].(string)
+	if creator == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Vesting has no creator"})
+		return
+	}
+	solanaRPC := os.Getenv("DEFAULT_SOLANA_RPC")
+	if solanaRPC == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Solana RPC endpoint not configured"})
+		return
+	}
+	client := rpc.New(solanaRPC)
+	txResult, err := mcsolana.GetTransactionBySignature(client, req.Signature)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Failed to get transaction: %v", err)})
+		return
+	}
+	addressList := []string{creator}
+	changes, err := mcsolana.ParseAddressBalanceChangesFromTransaction(txResult, addressList, "sol", 9)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to parse balance changes: %v", err)})
+		return
+	}
+	readable := 0.0
+	if len(changes) > 0 {
+		readable = changes[0].DeltaReadable
+	}
+	c.JSON(http.StatusOK, gin.H{"data": readable})
 }

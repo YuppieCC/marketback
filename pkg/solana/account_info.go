@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -576,5 +577,138 @@ func GetMultiAccountsInfo(client *rpc.Client, accounts []string, mint string, de
 		})
 	}
 
+	return results, nil
+}
+
+// AddressBalanceChange represents the balance change for an address from a transaction
+type AddressBalanceChange struct {
+	Address          string  `json:"address"`
+	Mint             string  `json:"mint"`                // "sol" for native SOL
+	DeltaLamports    int64   `json:"delta_lamports"`      // SOL change in lamports (post - pre)
+	DeltaTokenAmount float64 `json:"delta_token_amount"`  // Token change (post - pre), 0 for SOL
+	DeltaTokenRaw    string  `json:"delta_token_raw"`     // Raw token amount string if needed
+	DeltaReadable    float64 `json:"delta_readable"`      // Human-readable delta using Decimals (SOL: lamports/10^decimals; token: ui amount)
+}
+
+// GetTransactionBySignature fetches a transaction by signature from Solana RPC
+func GetTransactionBySignature(client *rpc.Client, signature string) (*rpc.GetTransactionResult, error) {
+	sig, err := solana.SignatureFromBase58(signature)
+	if err != nil {
+		return nil, fmt.Errorf("invalid signature: %w", err)
+	}
+	ctx := context.Background()
+	maxVer := rpc.MaxSupportedTransactionVersion1
+	opts := &rpc.GetTransactionOpts{
+		Encoding:                     solana.EncodingBase64,
+		MaxSupportedTransactionVersion: &maxVer,
+	}
+	txResult, err := client.GetTransaction(ctx, sig, opts)
+	if err != nil {
+		return nil, fmt.Errorf("getTransaction: %w", err)
+	}
+	if txResult == nil || txResult.Transaction == nil {
+		return nil, fmt.Errorf("transaction not found")
+	}
+	return txResult, nil
+}
+
+// ParseAddressBalanceChangesFromTransaction parses balance changes for the given addresses and mint from a transaction result.
+// If mint is "sol" (case-insensitive), parses SOL balance changes; otherwise parses SPL token balance changes for that mint.
+// decimals is used for DeltaReadable: for SOL, readable = lamports/10^decimals (default 9 if 0); for token, readable = ui amount.
+func ParseAddressBalanceChangesFromTransaction(txResult *rpc.GetTransactionResult, addressList []string, mint string, decimals uint) ([]AddressBalanceChange, error) {
+	if txResult == nil || txResult.Transaction == nil || txResult.Meta == nil {
+		return nil, fmt.Errorf("transaction or meta is nil")
+	}
+	tx, err := txResult.Transaction.GetTransaction()
+	if err != nil {
+		return nil, fmt.Errorf("decode transaction: %w", err)
+	}
+	meta := txResult.Meta
+	addressSet := make(map[string]bool)
+	for _, a := range addressList {
+		addressSet[a] = true
+	}
+		var results []AddressBalanceChange
+	mintLower := strings.ToLower(strings.TrimSpace(mint))
+	if mintLower == "sol" {
+		dec := decimals
+		if dec == 0 {
+			dec = 9
+		}
+		divisor := math.Pow(10, float64(dec))
+		// Build full account key list (static + loaded addresses for versioned tx)
+		accountKeys := make([]solana.PublicKey, 0, len(tx.Message.AccountKeys)+32)
+		accountKeys = append(accountKeys, tx.Message.AccountKeys...)
+		if len(meta.LoadedAddresses.Writable) > 0 || len(meta.LoadedAddresses.ReadOnly) > 0 {
+			accountKeys = append(accountKeys, meta.LoadedAddresses.Writable...)
+			accountKeys = append(accountKeys, meta.LoadedAddresses.ReadOnly...)
+		}
+		preBalances := meta.PreBalances
+		postBalances := meta.PostBalances
+		if len(preBalances) != len(accountKeys) || len(postBalances) != len(accountKeys) {
+			log.Warnf("preBalances/postBalances length mismatch with account keys: keys=%d pre=%d post=%d", len(accountKeys), len(preBalances), len(postBalances))
+		}
+		for _, addr := range addressList {
+			change := AddressBalanceChange{Address: addr, Mint: "sol"}
+			pk, err := solana.PublicKeyFromBase58(addr)
+			if err != nil {
+				change.DeltaLamports = 0
+				results = append(results, change)
+				continue
+			}
+			for i, key := range accountKeys {
+				if !key.Equals(pk) {
+					continue
+				}
+				var pre, post uint64
+				if i < len(preBalances) {
+					pre = preBalances[i]
+				}
+				if i < len(postBalances) {
+					post = postBalances[i]
+				}
+				change.DeltaLamports = int64(post) - int64(pre)
+				change.DeltaReadable = float64(change.DeltaLamports) / divisor
+				break
+			}
+			results = append(results, change)
+		}
+		return results, nil
+	}
+	// SPL token balance changes: filter by Owner and Mint
+	mintPK, err := solana.PublicKeyFromBase58(mint)
+	if err != nil {
+		return nil, fmt.Errorf("invalid mint address: %w", err)
+	}
+	preToken := meta.PreTokenBalances
+	postToken := meta.PostTokenBalances
+	for _, addr := range addressList {
+		change := AddressBalanceChange{Address: addr, Mint: mint}
+		ownerPK, err := solana.PublicKeyFromBase58(addr)
+		if err != nil {
+			results = append(results, change)
+			continue
+		}
+		var preAmount, postAmount float64
+		for _, bal := range preToken {
+			if bal.Mint.Equals(mintPK) && bal.Owner != nil && bal.Owner.Equals(ownerPK) {
+				if bal.UiTokenAmount != nil && bal.UiTokenAmount.UiAmount != nil {
+					preAmount = *bal.UiTokenAmount.UiAmount
+				}
+				break
+			}
+		}
+		for _, bal := range postToken {
+			if bal.Mint.Equals(mintPK) && bal.Owner != nil && bal.Owner.Equals(ownerPK) {
+				if bal.UiTokenAmount != nil && bal.UiTokenAmount.UiAmount != nil {
+					postAmount = *bal.UiTokenAmount.UiAmount
+				}
+				break
+			}
+		}
+		change.DeltaTokenAmount = postAmount - preAmount
+		change.DeltaReadable = change.DeltaTokenAmount
+		results = append(results, change)
+	}
 	return results, nil
 }
