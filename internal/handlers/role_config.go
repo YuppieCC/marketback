@@ -1,16 +1,21 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/blocto/solana-go-sdk/types"
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gin-gonic/gin"
 
@@ -20,6 +25,7 @@ import (
 	solanaUtils "marketcontrol/pkg/solana"
 
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // RoleConfigRequest represents the request body for creating/updating a role config
@@ -28,6 +34,7 @@ type RoleConfigRequest struct {
 	UpdateInterval float64 `json:"update_interval"`
 	UpdateEnabled  bool    `json:"update_enabled"`
 	Hidden         bool    `json:"hidden"`
+	MainAddress    string  `json:"main_address"`
 }
 
 // CreateRoleConfigWithProjectRequest represents the request body for creating a role config with project relation
@@ -36,6 +43,7 @@ type CreateRoleConfigWithProjectRequest struct {
 	UpdateInterval float64 `json:"update_interval"`
 	UpdateEnabled  bool    `json:"update_enabled"`
 	Hidden         bool    `json:"hidden"`
+	MainAddress    string  `json:"main_address"`
 	ProjectID      uint    `json:"project_id" binding:"required"`
 }
 
@@ -90,6 +98,7 @@ func CreateRoleConfig(c *gin.Context) {
 		UpdateInterval: request.UpdateInterval,
 		UpdateEnabled:  request.UpdateEnabled,
 		Hidden:         request.Hidden,
+		MainAddress:    request.MainAddress,
 	}
 
 	if err := dbconfig.DB.Create(&role).Error; err != nil {
@@ -120,8 +129,10 @@ func UpdateRoleConfig(c *gin.Context) {
 		if _, hasUpdateInterval := rawJSON["update_interval"]; !hasUpdateInterval {
 			if _, hasUpdateEnabled := rawJSON["update_enabled"]; !hasUpdateEnabled {
 				if _, hasHidden := rawJSON["hidden"]; !hasHidden {
-					c.JSON(http.StatusBadRequest, gin.H{"error": "At least one field (role_name, update_interval, update_enabled, or hidden) must be provided"})
-					return
+					if _, hasMainAddress := rawJSON["main_address"]; !hasMainAddress {
+						c.JSON(http.StatusBadRequest, gin.H{"error": "At least one field (role_name, update_interval, update_enabled, hidden, or main_address) must be provided"})
+						return
+					}
 				}
 			}
 		}
@@ -151,6 +162,9 @@ func UpdateRoleConfig(c *gin.Context) {
 	}
 	if hidden, exists := rawJSON["hidden"]; exists {
 		role.Hidden = hidden.(bool)
+	}
+	if mainAddress, exists := rawJSON["main_address"]; exists {
+		role.MainAddress = mainAddress.(string)
 	}
 
 	if err := dbconfig.DB.Save(&role).Error; err != nil {
@@ -646,6 +660,7 @@ func CreateRoleConfigByTemplateID(c *gin.Context) {
 		UpdateInterval: template.UpdateInterval,
 		UpdateEnabled:  template.UpdateEnabled,
 		Hidden:         false, // default when creating from template
+		MainAddress:    "",    // default when creating from template
 		LastUpdateAt:   template.LastUpdateAt,
 	}
 
@@ -1403,6 +1418,12 @@ type CheckRoleAddressExistRequest struct {
 	AddressLists []string `json:"address_lists" binding:"required"`
 }
 
+// SelectRandomRoleAddressTransferRequest is the body for POST /select-random-roleaddress-transfer
+type SelectRandomRoleAddressTransferRequest struct {
+	FromRoleID uint `json:"from_role_id" binding:"required"`
+	ToRoleID   uint `json:"to_role_id" binding:"required"`
+}
+
 // CheckRoleAddressExist checks if addresses exist for a specific role
 func CheckRoleAddressExist(c *gin.Context) {
 	var request CheckRoleAddressExistRequest
@@ -1436,4 +1457,293 @@ func CheckRoleAddressExist(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+// SafeDeleteAddressByRoleRequest represents the request body for safe-delete
+type SafeDeleteAddressByRoleRequest struct {
+	RoleID        uint   `json:"role_id" binding:"required"`
+	DeleteAddress string `json:"delete_address" binding:"required"`
+}
+
+func writeSafeDeleteLog(message string, meta models.JSONMap) {
+	sysLog := models.SystemLog{
+		ProjectID:  0,
+		Level:      "INFO",
+		Message:    message,
+		Module:     "SafeDeteleRoleAddress",
+		ErrorStack: "",
+		Meta:       meta,
+	}
+	if err := dbconfig.DB.Create(&sysLog).Error; err != nil {
+		log.Warnf("SafeDelete write system log failed: %v", err)
+	}
+}
+
+// SafeDeleteAddressByRole finds RoleAddress by role_id and delete_address; if SOL balance > 0 transfers to oldest other address in role, waits 6s, then if balance 0 deletes the record
+func SafeDeleteAddressByRole(c *gin.Context) {
+	var request SafeDeleteAddressByRoleRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var roleConfig models.RoleConfig
+	if err := dbconfig.DB.First(&roleConfig, request.RoleID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "RoleConfig not found for role_id"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if roleConfig.MainAddress != "" && roleConfig.MainAddress == request.DeleteAddress {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "DeleteAddress Can not be MainAddress"})
+		return
+	}
+
+	var roleAddr models.RoleAddress
+	if err := dbconfig.DB.Where("role_id = ? AND address = ?", request.RoleID, request.DeleteAddress).First(&roleAddr).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "RoleAddress not found for role_id and delete_address"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	writeSafeDeleteLog("SafeDelete started", models.JSONMap{"role_id": request.RoleID, "delete_address": request.DeleteAddress})
+
+	solanaRPC := os.Getenv("DEFAULT_SOLANA_RPC")
+	if solanaRPC == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Solana RPC endpoint not configured"})
+		return
+	}
+	client := rpc.New(solanaRPC)
+	ctx := context.Background()
+
+	deletePubkey, err := solana.PublicKeyFromBase58(request.DeleteAddress)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid delete_address"})
+		return
+	}
+
+	deleteBalance, _, err := solanaUtils.GetSolBalance(client, deletePubkey)
+	if err != nil {
+		writeSafeDeleteLog("GetSolBalance failed", models.JSONMap{"delete_address": request.DeleteAddress, "error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to get SOL balance: %v", err)})
+		return
+	}
+
+	writeSafeDeleteLog("Delete address balance queried", models.JSONMap{"delete_address": request.DeleteAddress, "lamports": deleteBalance})
+
+	if deleteBalance > 0 {
+		var allAddrs []models.RoleAddress
+		if err := dbconfig.DB.Where("role_id = ?", request.RoleID).Order("id asc").Find(&allAddrs).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		var targetAddress string
+		for _, a := range allAddrs {
+			if a.Address != request.DeleteAddress {
+				targetAddress = a.Address
+				break
+			}
+		}
+		if targetAddress == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "该 role 下除待删除地址外无其他地址，无法转出 SOL"})
+			return
+		}
+
+		amount := deleteBalance - 5000
+		if amount <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "余额不足 5000 lamports，无法在保留 5000 后转账"})
+			return
+		}
+
+		encryptPassword := os.Getenv("ENCRYPTPASSWORD")
+		if encryptPassword == "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ENCRYPTPASSWORD not set"})
+			return
+		}
+		var addrManage models.AddressManage
+		if err := dbconfig.DB.Where("address = ?", request.DeleteAddress).First(&addrManage).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "delete_address 在 AddressManage 中不存在，无法签名转账"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		km := keyManager.NewKeyManager()
+		decryptedKey, err := km.DecryptPrivateKey(addrManage.PrivateKey, encryptPassword)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("解密私钥失败: %v", err)})
+			return
+		}
+		account, err := types.AccountFromBytes(decryptedKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("AccountFromBytes: %v", err)})
+			return
+		}
+		privateKeyBytes := account.PrivateKey[:]
+		privKey := solana.PrivateKey(privateKeyBytes)
+
+		toPubkey, _ := solana.PublicKeyFromBase58(targetAddress)
+		ix := system.NewTransferInstruction(
+			amount,
+			deletePubkey,
+			toPubkey,
+		).Build()
+		bh, err := client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+		if err != nil {
+			writeSafeDeleteLog("GetLatestBlockhash failed", models.JSONMap{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("GetLatestBlockhash: %v", err)})
+			return
+		}
+		tx, err := solana.NewTransaction(
+			[]solana.Instruction{ix},
+			bh.Value.Blockhash,
+			solana.TransactionPayer(deletePubkey),
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("NewTransaction: %v", err)})
+			return
+		}
+		if _, err := tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
+			if key.Equals(deletePubkey) {
+				return &privKey
+			}
+			return nil
+		}); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Sign: %v", err)})
+			return
+		}
+		sig, err := client.SendTransaction(ctx, tx)
+		if err != nil {
+			writeSafeDeleteLog("SendTransaction failed", models.JSONMap{"from": request.DeleteAddress, "to": targetAddress, "amount": amount, "error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("SendTransaction: %v", err)})
+			return
+		}
+		writeSafeDeleteLog("SOL transfer sent", models.JSONMap{"from": request.DeleteAddress, "to": targetAddress, "amount": amount, "signature": sig.String()})
+		time.Sleep(6 * time.Second)
+	}
+
+	deleteBalanceAfter, _, err := solanaUtils.GetSolBalance(client, deletePubkey)
+	if err != nil {
+		writeSafeDeleteLog("Re-query balance failed", models.JSONMap{"delete_address": request.DeleteAddress, "error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Re-query balance: %v", err)})
+		return
+	}
+	if deleteBalanceAfter != 0 {
+		writeSafeDeleteLog("Balance not zero, skip delete", models.JSONMap{"delete_address": request.DeleteAddress, "lamports": deleteBalanceAfter})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "等待后余额仍不为 0，未删除记录", "balance_lamports": deleteBalanceAfter})
+		return
+	}
+
+	if err := dbconfig.DB.Where("role_id = ? AND address = ?", request.RoleID, request.DeleteAddress).Delete(&models.RoleAddress{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	transferAmount := uint64(0)
+	if deleteBalance > 0 {
+		transferAmount = deleteBalance - 5000
+	}
+	writeSafeDeleteLog("SafeDelete completed, record deleted", models.JSONMap{"role_id": request.RoleID, "delete_address": request.DeleteAddress, "transfer_lamports": transferAmount})
+	c.JSON(http.StatusOK, gin.H{
+		"message":           "删除成功",
+		"transfer_lamports": transferAmount,
+	})
+}
+
+// SelectRandomRoleAddressTransfer picks a random FromAddress (balance > 0.008 SOL) from from_role_id and a random ToAddress (not MainAddress) from to_role_id.
+func SelectRandomRoleAddressTransfer(c *gin.Context) {
+	var request SelectRandomRoleAddressTransferRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// FromRole: load all RoleAddress
+	var fromAddrs []models.RoleAddress
+	if err := dbconfig.DB.Where("role_id = ?", request.FromRoleID).Find(&fromAddrs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to get addresses for from_role_id %d: %v", request.FromRoleID, err)})
+		return
+	}
+	if len(fromAddrs) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("No addresses found for from_role_id %d", request.FromRoleID)})
+		return
+	}
+
+	solanaRPC := os.Getenv("DEFAULT_SOLANA_RPC")
+	if solanaRPC == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Solana RPC endpoint not configured"})
+		return
+	}
+	client := rpc.New(solanaRPC)
+
+	// Shuffle and find first address with balance > 0.008 SOL (8_000_000 lamports)
+	const minLamports = 6_000_000 // 0.008 SOL
+	shuffled := make([]models.RoleAddress, len(fromAddrs))
+	copy(shuffled, fromAddrs)
+	rand.Shuffle(len(shuffled), func(i, j int) { shuffled[i], shuffled[j] = shuffled[j], shuffled[i] })
+
+	var fromAddress string
+	var fromAddressBalance uint64
+	for _, ra := range shuffled {
+		pubkey, err := solana.PublicKeyFromBase58(ra.Address)
+		if err != nil {
+			continue
+		}
+		lamports, _, err := solanaUtils.GetSolBalance(client, pubkey)
+		if err != nil {
+			continue
+		}
+		if lamports > minLamports {
+			fromAddress = ra.Address
+			fromAddressBalance = lamports
+			break
+		}
+	}
+	if fromAddress == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("No address with SOL balance > 0.008 for from_role_id %d", request.FromRoleID)})
+		return
+	}
+
+	// ToRole: load RoleConfig (for MainAddress) and RoleAddress, then pick one that is not MainAddress
+	var toRole models.RoleConfig
+	if err := dbconfig.DB.First(&toRole, request.ToRoleID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Role not found for to_role_id %d", request.ToRoleID)})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var toAddrs []models.RoleAddress
+	if err := dbconfig.DB.Where("role_id = ?", request.ToRoleID).Find(&toAddrs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to get addresses for to_role_id %d: %v", request.ToRoleID, err)})
+		return
+	}
+
+	mainAddr := toRole.MainAddress
+	candidates := make([]models.RoleAddress, 0, len(toAddrs))
+	for _, ra := range toAddrs {
+		if mainAddr != "" && ra.Address == mainAddr {
+			continue
+		}
+		candidates = append(candidates, ra)
+	}
+	if len(candidates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("No ToAddress candidate (excluding MainAddress) for to_role_id %d", request.ToRoleID)})
+		return
+	}
+
+	toAddress := candidates[rand.Intn(len(candidates))].Address
+
+	c.JSON(http.StatusOK, gin.H{
+		"from_address":         fromAddress,
+		"from_address_balance": fromAddressBalance,
+		"to_address":          toAddress,
+	})
 }

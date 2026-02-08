@@ -294,7 +294,7 @@ func GetErrorVesting(c *gin.Context) {
 				if prm, ok := m["pool_remove_amount"].(float64); ok {
 					poolRemoveAmount = prm
 				}
-				if status == "failed" || (status == "done" && poolRemoveAmount == 0) {
+				if status == "failed" || (status == "done" && poolRemoveAmount == 0) || status == "CreatorInRole" {
 					matchedIDs = append(matchedIDs, pc.ID)
 				}
 			}

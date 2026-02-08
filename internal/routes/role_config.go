@@ -38,6 +38,8 @@ func SetupRoleConfigRoutes(r *gin.Engine) {
 		roleAddr.POST("/transfer-mint", handlers.TransferMintToTargetByRole)
 		roleAddr.GET("/sol-balances/:role_id", handlers.GetRoleAddressSolBalances)
 		roleAddr.POST("/check-exists", handlers.CheckRoleAddressExist)
+		roleAddr.POST("/safe-delete", handlers.SafeDeleteAddressByRole)
+		roleAddr.POST("/select-random-roleaddress-transfer", handlers.SelectRandomRoleAddressTransfer)
 	}
 
 	roleConfigRelation := r.Group("/role-config-relation")

@@ -1425,6 +1425,13 @@ type DisposableAddressRequest struct {
 	IsDeprecated *bool  `json:"is_deprecated"`
 }
 
+// BatchUpdateDisposableAddressRequest is the body for POST /disposable-address-manage/batch-update
+type BatchUpdateDisposableAddressRequest struct {
+	StartID      uint `json:"start_id" binding:"required"`
+	EndID        uint `json:"end_id" binding:"required"`
+	IsDeprecated bool `json:"is_deprecated"`
+}
+
 // ListDisposableAddresses returns a list of all disposable managed addresses
 func ListDisposableAddresses(c *gin.Context) {
 	var addresses []models.DisposableAddressManage
@@ -1530,6 +1537,35 @@ func DeleteDisposableAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Record deleted successfully"})
 }
 
+// BatchUpdateDisposableAddress updates IsDeprecated for all DisposableAddressManage records with id in [start_id, end_id].
+func BatchUpdateDisposableAddress(c *gin.Context) {
+	var request BatchUpdateDisposableAddressRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if request.StartID > request.EndID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "start_id must be less than or equal to end_id"})
+		return
+	}
+
+	result := dbconfig.DB.Model(&models.DisposableAddressManage{}).
+		Where("id >= ? AND id <= ?", request.StartID, request.EndID).
+		Update("is_deprecated", request.IsDeprecated)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Batch update completed",
+		"rows_affected":   result.RowsAffected,
+		"start_id":        request.StartID,
+		"end_id":          request.EndID,
+		"is_deprecated":   request.IsDeprecated,
+	})
+}
+
 // GenerateDisposableAddresses generates multiple Solana addresses for disposable addresses
 func GenerateDisposableAddresses(c *gin.Context) {
 	var request GenerateAddressRequest
@@ -1607,6 +1643,7 @@ func GenerateSingleDisposableAddress(km *solana.KeyManager) (*models.DisposableA
 // GetAndReplaceDisposableAddressRequest represents the request body for get-and-replace
 type GetAndReplaceDisposableAddressRequest struct {
 	DeprecatedAddress string `json:"deprecated-address" binding:"required"`
+	RoleId            uint   `json:"role_id"`
 }
 
 // GetAndReplaceDisposableAddress gets a new address and marks the deprecated address as deprecated
@@ -1663,6 +1700,24 @@ func GetAndReplaceDisposableAddress(c *gin.Context) {
 		}
 	}
 	// 如果地址已存在，不做任何操作，直接继续
+
+	// 若提供了 RoleId，则更新对应 RoleConfig 的 MainAddress 为 newAddress
+	if request.RoleId > 0 {
+		var roleConfig models.RoleConfig
+		if err := dbconfig.DB.First(&roleConfig, request.RoleId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "RoleConfig not found for role_id"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		roleConfig.MainAddress = newAddress.Address
+		if err := dbconfig.DB.Save(&roleConfig).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("更新 RoleConfig MainAddress 失败: %v", err)})
+			return
+		}
+	}
 
 	// 返回新地址
 	c.JSON(http.StatusOK, newAddress)

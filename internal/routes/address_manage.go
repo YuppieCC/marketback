@@ -54,5 +54,6 @@ func SetupAddressManageRoutes(r *gin.Engine) {
 		disposableAddress.POST("/export-with-new-password", handlers.ExportWithNewPasswordInDisposableAddressManage)
 		disposableAddress.POST("/import-and-verify-password", handlers.ImportAndVerifyPasswordInDisposableAddressManage)
 		disposableAddress.POST("/import-csv", handlers.ImportCsvInDisposableAddressManage)
+		disposableAddress.POST("/batch-update", handlers.BatchUpdateDisposableAddress)
 	}
 }

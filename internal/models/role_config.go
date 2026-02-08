@@ -10,6 +10,7 @@ type RoleConfig struct {
 	UpdateInterval float64       `json:"update_interval"`
 	UpdateEnabled  bool          `json:"update_enabled" gorm:"default:true"`
 	Hidden         bool          `json:"hidden" gorm:"column:hidden;default:false"`
+	MainAddress    string        `json:"main_address" gorm:"column:main_address;size:100;default:''"`
 	LastUpdateAt   *time.Time    `json:"last_update_at"`
 	CreatedAt      time.Time     `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt      time.Time     `json:"updated_at" gorm:"autoUpdateTime"`
