@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -3780,6 +3781,136 @@ func GetSwapTransactionsByProject(c *gin.Context) {
 	}
 
 	// Return result
+	c.JSON(http.StatusOK, gin.H{
+		"project_id":        projectID,
+		"token_mint":        tokenConfig.Mint,
+		"retail_sol_amount": retailSolAmount,
+		"transaction_count": len(transactions),
+		"transactions":      transactionResponses,
+	})
+}
+
+// SwapTransactionResponseV2 is the aggregated-by-payer response for GetSwapTransactionsByProjectV2
+type SwapTransactionResponseV2 struct {
+	ID             uint    `json:"id"`
+	Payer          string  `json:"payer"`
+	BaseChange     float64 `json:"base_change"`
+	BaseChangeAbs  float64 `json:"base_change_abs"`
+	HoldPercent    float64 `json:"hold_percent"`
+	QuoteChange    float64 `json:"quote_change"`
+	StartTimestamp uint    `json:"start_timestamp"`
+	LastTimestamp  uint    `json:"last_timestamp"`
+	TxCount        uint    `json:"tx_count"`
+}
+
+// GetSwapTransactionsByProjectV2 returns swap transactions by project ID aggregated by Payer (one row per Payer with summed BaseChange/QuoteChange and min/max CreatedAt).
+func GetSwapTransactionsByProjectV2(c *gin.Context) {
+	projectID, err := strconv.Atoi(c.Param("project_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project_id format"})
+		return
+	}
+
+	var projectConfig models.ProjectConfig
+	if err := dbconfig.DB.First(&projectConfig, projectID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	var tokenConfig models.TokenConfig
+	if err := dbconfig.DB.First(&tokenConfig, projectConfig.TokenID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Token not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	var transactions []models.SwapTransaction
+	if err := dbconfig.DB.Where("base_mint = ? AND is_success = ?", tokenConfig.Mint, true).
+		Order("slot DESC").
+		Find(&transactions).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// RetailSolAmount: SUM(-QuoteChange)
+	var retailSolAmount float64
+	for _, tx := range transactions {
+		retailSolAmount += -tx.QuoteChange
+	}
+
+	// Aggregate by Payer: sum BaseChange, QuoteChange; min/max CreatedAt; count
+	type agg struct {
+		baseChange  float64
+		quoteChange float64
+		firstAt     time.Time
+		lastAt      time.Time
+		count       uint
+	}
+	byPayer := make(map[string]*agg)
+	for _, tx := range transactions {
+		a, ok := byPayer[tx.Payer]
+		if !ok {
+			byPayer[tx.Payer] = &agg{
+				baseChange:  tx.BaseChange,
+				quoteChange: tx.QuoteChange,
+				firstAt:     tx.CreatedAt,
+				lastAt:      tx.CreatedAt,
+				count:       1,
+			}
+			continue
+		}
+		a.baseChange += tx.BaseChange
+		a.quoteChange += tx.QuoteChange
+		if tx.CreatedAt.Before(a.firstAt) {
+			a.firstAt = tx.CreatedAt
+		}
+		if tx.CreatedAt.After(a.lastAt) {
+			a.lastAt = tx.CreatedAt
+		}
+		a.count++
+	}
+
+	transactionResponses := make([]SwapTransactionResponseV2, 0, len(byPayer))
+	idx := uint(0)
+	const oneB = 1e9
+	for payer, a := range byPayer {
+		idx++
+		baseChange := a.baseChange
+		baseChangeAbs := a.baseChange
+		if baseChangeAbs < 0 {
+			baseChangeAbs = -baseChangeAbs
+		}
+
+		if baseChangeAbs < 0.00001 {
+			baseChange = 0
+			baseChangeAbs = 0
+		}
+
+		holdPercent := baseChangeAbs / oneB * 100
+		transactionResponses = append(transactionResponses, SwapTransactionResponseV2{
+			ID:             idx,
+			Payer:          payer,
+			BaseChange:     baseChange,
+			BaseChangeAbs:  baseChangeAbs,
+			HoldPercent:    holdPercent,
+			QuoteChange:    a.quoteChange,
+			StartTimestamp: uint(a.firstAt.Unix()),
+			LastTimestamp:  uint(a.lastAt.Unix()),
+			TxCount:        a.count,
+		})
+	}
+
+	sort.Slice(transactionResponses, func(i, j int) bool {
+		return transactionResponses[i].BaseChangeAbs > transactionResponses[j].BaseChangeAbs
+	})
+
 	c.JSON(http.StatusOK, gin.H{
 		"project_id":        projectID,
 		"token_mint":        tokenConfig.Mint,
