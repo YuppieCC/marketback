@@ -20,6 +20,8 @@ type MeteoracpmmConfigRequest struct {
 	PoolBaseTokenAccount  string `json:"pool_base_token_account" binding:"required"`
 	PoolQuoteTokenAccount string `json:"pool_quote_token_account" binding:"required"`
 	Status                string `json:"status"`
+	IsSkipDbc             bool   `json:"is_skip_dbc"`
+	IsReverse             bool   `json:"is_reverse"`
 }
 
 // ListMeteoracpmmConfigs returns a list of all meteoracpmm configurations
@@ -137,6 +139,8 @@ func CreateMeteoracpmmConfig(c *gin.Context) {
 		PoolBaseTokenAccount:  request.PoolBaseTokenAccount,
 		PoolQuoteTokenAccount: request.PoolQuoteTokenAccount,
 		Status:                request.Status,
+		IsSkipDbc:             request.IsSkipDbc,
+		IsReverse:             request.IsReverse,
 	}
 
 	if err := dbconfig.DB.Create(&config).Error; err != nil {
@@ -178,6 +182,8 @@ func UpdateMeteoracpmmConfig(c *gin.Context) {
 	config.QuoteMint = request.QuoteMint
 	config.PoolBaseTokenAccount = request.PoolBaseTokenAccount
 	config.PoolQuoteTokenAccount = request.PoolQuoteTokenAccount
+	config.IsSkipDbc = request.IsSkipDbc
+	config.IsReverse = request.IsReverse
 	if request.Status != "" {
 		config.Status = request.Status
 	}
@@ -266,7 +272,7 @@ func ListMeteoracpmmConfigsBySlice(c *gin.Context) {
 	orderField := "id"
 	if of := c.Query("order_field"); of != "" {
 		// Validate order field to prevent SQL injection
-		validFields := []string{"id", "pool_address", "dbc_pool_address", "creator", "base_mint", "quote_mint", "pool_base_token_account", "pool_quote_token_account", "status", "created_at", "updated_at"}
+		validFields := []string{"id", "pool_address", "dbc_pool_address", "creator", "base_mint", "quote_mint", "pool_base_token_account", "pool_quote_token_account", "status", "is_skip_dbc", "is_reverse", "created_at", "updated_at"}
 		for _, field := range validFields {
 			if of == field {
 				orderField = of

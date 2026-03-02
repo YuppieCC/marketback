@@ -1712,6 +1712,8 @@ type CpmmPoolConfig struct {
 	PoolBaseTokenAccount  string `json:"pool_base_token_account" binding:"required"`
 	PoolQuoteTokenAccount string `json:"pool_quote_token_account" binding:"required"`
 	Status                string `json:"status" binding:"required"`
+	IsSkipDbc             bool   `json:"is_skip_dbc"`
+	IsReverse             bool   `json:"is_reverse"`
 }
 
 // AutoCreateMeteoradbcProjectRequest represents the request body for auto-creating a meteora dbc project
@@ -1848,6 +1850,8 @@ func AutoCreateMeteoradbcProject(c *gin.Context) {
 			PoolBaseTokenAccount:  request.PoolConfig.CpmmPoolConfig.PoolBaseTokenAccount,
 			PoolQuoteTokenAccount: request.PoolConfig.CpmmPoolConfig.PoolQuoteTokenAccount,
 			Status:                request.PoolConfig.CpmmPoolConfig.Status,
+			IsSkipDbc:             request.PoolConfig.CpmmPoolConfig.IsSkipDbc,
+			IsReverse:             request.PoolConfig.CpmmPoolConfig.IsReverse,
 		}
 		// If DbcPoolAddress is empty, set it to MeteoradbcConfig.PoolAddress
 		if meteoracpmmConfig.DbcPoolAddress == "" {
@@ -2015,6 +2019,8 @@ func AutoCreateMeteoradbcProject(c *gin.Context) {
 			"pool_base_token_account":  meteoracpmmConfig.PoolBaseTokenAccount,
 			"pool_quote_token_account": meteoracpmmConfig.PoolQuoteTokenAccount,
 			"status":                   meteoracpmmConfig.Status,
+			"is_skip_dbc":              meteoracpmmConfig.IsSkipDbc,
+			"is_reverse":               meteoracpmmConfig.IsReverse,
 		}
 	}
 
@@ -2096,6 +2102,8 @@ func AutoCreateMeteoradbcProjectV2(c *gin.Context) {
 			PoolBaseTokenAccount:  request.PoolConfig.CpmmPoolConfig.PoolBaseTokenAccount,
 			PoolQuoteTokenAccount: request.PoolConfig.CpmmPoolConfig.PoolQuoteTokenAccount,
 			Status:                request.PoolConfig.CpmmPoolConfig.Status,
+			IsSkipDbc:             request.PoolConfig.CpmmPoolConfig.IsSkipDbc,
+			IsReverse:             request.PoolConfig.CpmmPoolConfig.IsReverse,
 		}
 		// If DbcPoolAddress is empty, set it to MeteoradbcConfig.PoolAddress
 		if meteoracpmmConfig.DbcPoolAddress == "" {
@@ -2292,6 +2300,8 @@ func AutoCreateMeteoradbcProjectV2(c *gin.Context) {
 			"pool_base_token_account":  meteoracpmmConfig.PoolBaseTokenAccount,
 			"pool_quote_token_account": meteoracpmmConfig.PoolQuoteTokenAccount,
 			"status":                   meteoracpmmConfig.Status,
+			"is_skip_dbc":              meteoracpmmConfig.IsSkipDbc,
+			"is_reverse":               meteoracpmmConfig.IsReverse,
 		}
 	}
 

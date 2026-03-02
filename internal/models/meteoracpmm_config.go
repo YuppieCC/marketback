@@ -15,6 +15,8 @@ type MeteoracpmmConfig struct {
 	PoolBaseTokenAccount  string    `json:"pool_base_token_account" gorm:"size:44"`
 	PoolQuoteTokenAccount string    `json:"pool_quote_token_account" gorm:"size:44"`
 	Status                string    `json:"status" gorm:"size:20;default:'active'"`
+	IsSkipDbc             bool      `json:"is_skip_dbc" gorm:"default:false"`
+	IsReverse             bool      `json:"is_reverse" gorm:"default:false"`
 	CreatedAt             time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt             time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 }
