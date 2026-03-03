@@ -139,13 +139,23 @@ func MultiTransferMintToTarget(
 		if bal.Balance == 0 {
 			continue
 		}
-		sourceATA, err := GetAssociatedTokenAddress2022(mintPubkey, accountMap[addr])
+		// 无私钥无法签名，跳过
+		if accountToPrivateKey[addr] == nil {
+			log.Warnf("Skipping account %s: no private key", addr)
+			continue
+		}
+		accountPubkey, ok := accountMap[addr]
+		if !ok {
+			continue
+		}
+		sourceATA, err := GetAssociatedTokenAddress2022(mintPubkey, accountPubkey)
 		if err != nil {
+			log.Warnf("Failed to get ATA for account %s: %v", addr, err)
 			continue
 		}
 		tasks = append(tasks, transferTask{
 			AccountAddress: addr,
-			AccountPubkey:  accountMap[addr],
+			AccountPubkey:  accountPubkey,
 			PrivateKey:     accountToPrivateKey[addr],
 			SourceATA:      sourceATA,
 			Balance:        bal.Balance,
