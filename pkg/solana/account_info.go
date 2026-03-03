@@ -395,10 +395,7 @@ func GetMultiAccountsSol(client *rpc.Client, accountPubkeys []solana.PublicKey) 
 	return lamportsMap, nil
 }
 
-// getMultipleAccountsBatchSize Solana RPC GetMultipleAccounts 单次请求的账户数上限（通常为 100）
-const getMultipleAccountsBatchSize = 100
-
-// GetMultiAccountsMint 批量获取多个账户的代币余额（通过 ATA），支持超过 100 个账户（分批请求）
+// GetMultiAccountsMint 批量获取多个账户的代币余额（通过 ATA）
 func GetMultiAccountsMint(client *rpc.Client, accountStrToPubkey map[string]solana.PublicKey, mint string, decimals uint8) (map[string]mintBalanceInfo, error) {
 	if len(accountStrToPubkey) == 0 {
 		return make(map[string]mintBalanceInfo), nil
@@ -410,98 +407,113 @@ func GetMultiAccountsMint(client *rpc.Client, accountStrToPubkey map[string]sola
 		return nil, fmt.Errorf("invalid mint address: %w", err)
 	}
 
-	// 构建有序的 (accountStr, ata) 列表，便于按批请求后按索引对应
-	type ataItem struct {
-		accountStr string
-		ata        solana.PublicKey
-	}
-	var items []ataItem
+	// Calculate ATA addresses for all accounts
+	var ataAddresses []solana.PublicKey
+	accountToATA := make(map[string]solana.PublicKey) // Map from account address to ATA
+
 	for accountStr, accountPubkey := range accountStrToPubkey {
-		ata, err := GetAssociatedTokenAddress2022(mintPubkey, accountPubkey)
+		// Use GetAssociatedTokenAddress from pumpswap.go
+		ata, err := GetAssociatedTokenAddress(mintPubkey, accountPubkey)
 		if err != nil {
 			log.Warnf("Failed to calculate ATA for account %s: %v", accountStr, err)
 			continue
 		}
-		items = append(items, ataItem{accountStr: accountStr, ata: ata})
+
+		ataAddresses = append(ataAddresses, ata)
+		accountToATA[accountStr] = ata
 	}
 
-	if len(items) == 0 {
+	if len(ataAddresses) == 0 {
+		// Return empty map if no ATA addresses
 		return make(map[string]mintBalanceInfo), nil
 	}
 
+	// Get multiple ATA account info in batch
 	ctx := context.Background()
+	ataArgs := make([]reflect.Value, 0, len(ataAddresses)+1)
+	ataArgs = append(ataArgs, reflect.ValueOf(ctx))
+	for _, addr := range ataAddresses {
+		ataArgs = append(ataArgs, reflect.ValueOf(addr))
+	}
+
 	method := reflect.ValueOf(client).MethodByName("GetMultipleAccounts")
 	if !method.IsValid() {
 		return nil, fmt.Errorf("GetMultipleAccounts method not found")
 	}
 
+	ataResult := method.Call(ataArgs)
+	if len(ataResult) != 2 {
+		return nil, fmt.Errorf("unexpected return value count for ATA accounts")
+	}
+
+	// Check for error
+	if errVal := ataResult[1]; !errVal.IsNil() {
+		if err, ok := errVal.Interface().(error); ok {
+			return nil, fmt.Errorf("failed to get multiple ATA accounts info: %w", err)
+		}
+	}
+
+	// Get the result for ATA balances
+	ataAccountsInfoVal := ataResult[0]
+	if !ataAccountsInfoVal.IsValid() || ataAccountsInfoVal.IsNil() {
+		return nil, fmt.Errorf("GetMultipleAccounts returned nil result for ATA accounts")
+	}
+	ataAccountsInfo, ok := ataAccountsInfoVal.Interface().(*rpc.GetMultipleAccountsResult)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert GetMultipleAccounts result for ATA accounts")
+	}
+
+	// Parse balances from account data
 	mintBalanceMap := make(map[string]mintBalanceInfo)
+	for i, accountInfo := range ataAccountsInfo.Value {
+		ataAddr := ataAddresses[i]
 
-	// 按批请求，每批最多 getMultipleAccountsBatchSize 个账户，避免超过 RPC 限制
-	for start := 0; start < len(items); start += getMultipleAccountsBatchSize {
-		end := start + getMultipleAccountsBatchSize
-		if end > len(items) {
-			end = len(items)
-		}
-		chunk := items[start:end]
-
-		ataArgs := make([]reflect.Value, 0, len(chunk)+1)
-		ataArgs = append(ataArgs, reflect.ValueOf(ctx))
-		for _, item := range chunk {
-			ataArgs = append(ataArgs, reflect.ValueOf(item.ata))
-		}
-
-		ataResult := method.Call(ataArgs)
-		if len(ataResult) != 2 {
-			return nil, fmt.Errorf("unexpected return value count for ATA accounts")
-		}
-
-		if errVal := ataResult[1]; !errVal.IsNil() {
-			if err, ok := errVal.Interface().(error); ok {
-				return nil, fmt.Errorf("failed to get multiple ATA accounts info (batch %d-%d): %w", start, end, err)
+		// Find the corresponding account address
+		var accountStr string
+		for accStr, ata := range accountToATA {
+			if ata.Equals(ataAddr) {
+				accountStr = accStr
+				break
 			}
 		}
 
-		ataAccountsInfoVal := ataResult[0]
-		if !ataAccountsInfoVal.IsValid() || ataAccountsInfoVal.IsNil() {
-			return nil, fmt.Errorf("GetMultipleAccounts returned nil result for ATA accounts")
-		}
-		ataAccountsInfo, ok := ataAccountsInfoVal.Interface().(*rpc.GetMultipleAccountsResult)
-		if !ok {
-			return nil, fmt.Errorf("failed to convert GetMultipleAccounts result for ATA accounts")
+		if accountStr == "" {
+			log.Warnf("Could not find account address for ATA: %s", ataAddr.String())
+			continue
 		}
 
-		// 本批结果与 chunk 一一对应
-		for i, accountInfo := range ataAccountsInfo.Value {
-			accountStr := chunk[i].accountStr
-
-			if accountInfo == nil {
-				mintBalanceMap[accountStr] = mintBalanceInfo{
-					Balance:         0,
-					BalanceReadable: 0,
-				}
-				continue
-			}
-
-			data := accountInfo.Data.GetBinary()
-			if len(data) < 72 {
-				log.Warnf("Account data too short: %d bytes for account %s", len(data), accountStr)
-				mintBalanceMap[accountStr] = mintBalanceInfo{
-					Balance:         0,
-					BalanceReadable: 0,
-				}
-				continue
-			}
-
-			balanceBytes := data[64:72]
-			balance := binary.LittleEndian.Uint64(balanceBytes)
-			divisor := math.Pow(10, float64(decimals))
-			balanceReadable := float64(balance) / float64(divisor)
-
+		if accountInfo == nil {
+			// ATA account doesn't exist, token balance is 0
 			mintBalanceMap[accountStr] = mintBalanceInfo{
-				Balance:         balance,
-				BalanceReadable: balanceReadable,
+				Balance:         0,
+				BalanceReadable: 0,
 			}
+			continue
+		}
+
+		// Parse account data to get token balance
+		// SPL Token account layout: balance is at offset 64 (8 bytes, uint64 little-endian)
+		data := accountInfo.Data.GetBinary()
+		if len(data) < 72 {
+			log.Warnf("Account data too short: %d bytes for account %s", len(data), accountStr)
+			mintBalanceMap[accountStr] = mintBalanceInfo{
+				Balance:         0,
+				BalanceReadable: 0,
+			}
+			continue
+		}
+
+		// Read balance from offset 64
+		balanceBytes := data[64:72]
+		balance := binary.LittleEndian.Uint64(balanceBytes)
+
+		// Calculate readable balance
+		divisor := math.Pow(10, float64(decimals))
+		balanceReadable := float64(balance) / float64(divisor)
+
+		mintBalanceMap[accountStr] = mintBalanceInfo{
+			Balance:         balance,
+			BalanceReadable: balanceReadable,
 		}
 	}
 
