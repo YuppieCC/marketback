@@ -412,8 +412,8 @@ func GetMultiAccountsMint(client *rpc.Client, accountStrToPubkey map[string]sola
 	accountToATA := make(map[string]solana.PublicKey) // Map from account address to ATA
 
 	for accountStr, accountPubkey := range accountStrToPubkey {
-		// Use GetAssociatedTokenAddress from pumpswap.go
-		ata, err := GetAssociatedTokenAddress(mintPubkey, accountPubkey)
+		// Use GetAssociatedTokenAddress2022 from pumpswap.go
+		ata, err := GetAssociatedTokenAddress2022(mintPubkey, accountPubkey)
 		if err != nil {
 			log.Warnf("Failed to calculate ATA for account %s: %v", accountStr, err)
 			continue
