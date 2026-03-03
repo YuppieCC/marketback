@@ -194,21 +194,20 @@ func GetAssociatedTokenAddress2022(
 	mint solana.PublicKey,
 	owner solana.PublicKey,
 ) (solana.PublicKey, error) {
+	return FindAssociatedTokenAddressWithProgram(owner, mint, solana.Token2022ProgramID)
+}
 
+// FindAssociatedTokenAddressWithProgram 根据指定 Token 程序 ID 计算 ATA（兼容 Token Program 与 Token-2022）
+func FindAssociatedTokenAddressWithProgram(owner, mint, tokenProgramID solana.PublicKey) (solana.PublicKey, error) {
 	seeds := [][]byte{
 		owner.Bytes(),
-		solana.Token2022ProgramID.Bytes(),
+		tokenProgramID.Bytes(),
 		mint.Bytes(),
 	}
-
-	address, _, err := solana.FindProgramAddress(
-		seeds,
-		solana.SPLAssociatedTokenAccountProgramID,
-	)
+	address, _, err := solana.FindProgramAddress(seeds, solana.SPLAssociatedTokenAccountProgramID)
 	if err != nil {
-		return solana.PublicKey{}, fmt.Errorf("failed to find token-2022 associated token address: %w", err)
+		return solana.PublicKey{}, fmt.Errorf("failed to find associated token address: %w", err)
 	}
-
 	return address, nil
 }
 

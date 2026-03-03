@@ -520,6 +520,94 @@ func GetMultiAccountsMint(client *rpc.Client, accountStrToPubkey map[string]sola
 	return mintBalanceMap, nil
 }
 
+// getMultipleAccountsBatchSize Solana RPC GetMultipleAccounts 单次请求的账户数上限
+const getMultipleAccountsBatchSize = 100
+
+// GetMultiAccountsMintWithTokenProgram 批量获取多个账户的代币余额（按指定 Token 程序 ID 计算 ATA，支持 Token / Token-2022）
+func GetMultiAccountsMintWithTokenProgram(client *rpc.Client, accountStrToPubkey map[string]solana.PublicKey, mint string, decimals uint8, tokenProgramID solana.PublicKey) (map[string]mintBalanceInfo, error) {
+	if len(accountStrToPubkey) == 0 {
+		return make(map[string]mintBalanceInfo), nil
+	}
+	mintPubkey, err := solana.PublicKeyFromBase58(mint)
+	if err != nil {
+		return nil, fmt.Errorf("invalid mint address: %w", err)
+	}
+
+	type ataItem struct {
+		accountStr string
+		ata        solana.PublicKey
+	}
+	var items []ataItem
+	for accountStr, accountPubkey := range accountStrToPubkey {
+		ata, err := FindAssociatedTokenAddressWithProgram(accountPubkey, mintPubkey, tokenProgramID)
+		if err != nil {
+			log.Warnf("Failed to calculate ATA for account %s: %v", accountStr, err)
+			continue
+		}
+		items = append(items, ataItem{accountStr: accountStr, ata: ata})
+	}
+	if len(items) == 0 {
+		return make(map[string]mintBalanceInfo), nil
+	}
+
+	ctx := context.Background()
+	method := reflect.ValueOf(client).MethodByName("GetMultipleAccounts")
+	if !method.IsValid() {
+		return nil, fmt.Errorf("GetMultipleAccounts method not found")
+	}
+
+	mintBalanceMap := make(map[string]mintBalanceInfo)
+	for start := 0; start < len(items); start += getMultipleAccountsBatchSize {
+		end := start + getMultipleAccountsBatchSize
+		if end > len(items) {
+			end = len(items)
+		}
+		chunk := items[start:end]
+		ataArgs := make([]reflect.Value, 0, len(chunk)+1)
+		ataArgs = append(ataArgs, reflect.ValueOf(ctx))
+		for _, item := range chunk {
+			ataArgs = append(ataArgs, reflect.ValueOf(item.ata))
+		}
+		ataResult := method.Call(ataArgs)
+		if len(ataResult) != 2 {
+			return nil, fmt.Errorf("unexpected return value count for ATA accounts")
+		}
+		if errVal := ataResult[1]; !errVal.IsNil() {
+			if e, ok := errVal.Interface().(error); ok {
+				return nil, fmt.Errorf("failed to get multiple ATA accounts info: %w", e)
+			}
+		}
+		ataAccountsInfoVal := ataResult[0]
+		if !ataAccountsInfoVal.IsValid() || ataAccountsInfoVal.IsNil() {
+			return nil, fmt.Errorf("GetMultipleAccounts returned nil result for ATA accounts")
+		}
+		ataAccountsInfo, ok := ataAccountsInfoVal.Interface().(*rpc.GetMultipleAccountsResult)
+		if !ok {
+			return nil, fmt.Errorf("failed to convert GetMultipleAccounts result for ATA accounts")
+		}
+		for i, accountInfo := range ataAccountsInfo.Value {
+			accountStr := chunk[i].accountStr
+			if accountInfo == nil {
+				mintBalanceMap[accountStr] = mintBalanceInfo{Balance: 0, BalanceReadable: 0}
+				continue
+			}
+			data := accountInfo.Data.GetBinary()
+			if len(data) < 72 {
+				log.Warnf("Account data too short: %d bytes for account %s", len(data), accountStr)
+				mintBalanceMap[accountStr] = mintBalanceInfo{Balance: 0, BalanceReadable: 0}
+				continue
+			}
+			balance := binary.LittleEndian.Uint64(data[64:72])
+			divisor := math.Pow(10, float64(decimals))
+			mintBalanceMap[accountStr] = mintBalanceInfo{
+				Balance:         balance,
+				BalanceReadable: float64(balance) / divisor,
+			}
+		}
+	}
+	return mintBalanceMap, nil
+}
+
 // GetMultiAccountsInfo 批量获取多个账户的代币余额信息
 func GetMultiAccountsInfo(client *rpc.Client, accounts []string, mint string, decimals uint8) ([]MultiAccountBalance, error) {
 	if len(accounts) == 0 {
