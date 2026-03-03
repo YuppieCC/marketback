@@ -10,16 +10,16 @@ import (
 // PumpSwap (PumpAMM) program constants
 var (
 	PumpAmmProgramID = solana.MustPublicKeyFromBase58("pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA")
-	WSolMint        = solana.MustPublicKeyFromBase58("So11111111111111111111111111111111111111112")
+	WSolMint         = solana.MustPublicKeyFromBase58("So11111111111111111111111111111111111111112")
 )
 
 // PumpSwap PDA seeds
 var (
-	SeedGlobalConfig              = []byte("global_config")
-	SeedPool                      = []byte("pool")
-	SeedPoolLpMint               = []byte("pool_lp_mint")
-	SeedEventAuthorityPumpSwap   = []byte("__event_authority")
-	SeedCreatorVaultPumpSwap     = []byte("creator_vault")
+	SeedGlobalConfig                    = []byte("global_config")
+	SeedPool                            = []byte("pool")
+	SeedPoolLpMint                      = []byte("pool_lp_mint")
+	SeedEventAuthorityPumpSwap          = []byte("__event_authority")
+	SeedCreatorVaultPumpSwap            = []byte("creator_vault")
 	SeedGlobalVolumeAccumulatorPumpSwap = []byte("global_volume_accumulator")
 	SeedUserVolumeAccumulatorPumpSwap   = []byte("user_volume_accumulator")
 )
@@ -27,27 +27,27 @@ var (
 // PumpSwapPDAInfo contains all PumpSwap PDA information
 type PumpSwapPDAInfo struct {
 	GlobalConfig              PDAResult `json:"globalConfig"`
-	EventAuthority           PDAResult `json:"eventAuthority"`
-	Pool                     PDAResult `json:"pool"`
-	PoolLpMint              PDAResult `json:"poolLpMint"`
+	EventAuthority            PDAResult `json:"eventAuthority"`
+	Pool                      PDAResult `json:"pool"`
+	PoolLpMint                PDAResult `json:"poolLpMint"`
 	CoinCreatorVaultAuthority PDAResult `json:"coinCreatorVaultAuthority"`
-	GlobalVolumeAccumulator  PDAResult `json:"globalVolumeAccumulator"`
-	UserVolumeAccumulator    PDAResult `json:"userVolumeAccumulator"`
-	BondingCurve             PDAResult `json:"bondingCurve"`
-	Metadata                 PDAResult `json:"metadata"`
-	
+	GlobalVolumeAccumulator   PDAResult `json:"globalVolumeAccumulator"`
+	UserVolumeAccumulator     PDAResult `json:"userVolumeAccumulator"`
+	BondingCurve              PDAResult `json:"bondingCurve"`
+	Metadata                  PDAResult `json:"metadata"`
+
 	// Token Accounts
-	UserBaseTokenAccount   solana.PublicKey `json:"userBaseTokenAccount"`
-	UserQuoteTokenAccount  solana.PublicKey `json:"userQuoteTokenAccount"`
-	UserPoolTokenAccount   solana.PublicKey `json:"userPoolTokenAccount"`
-	PoolBaseTokenAccount   solana.PublicKey `json:"poolBaseTokenAccount"`
-	PoolQuoteTokenAccount  solana.PublicKey `json:"poolQuoteTokenAccount"`
-	CoinCreatorVaultATA    solana.PublicKey `json:"coinCreatorVaultATA"`
+	UserBaseTokenAccount  solana.PublicKey `json:"userBaseTokenAccount"`
+	UserQuoteTokenAccount solana.PublicKey `json:"userQuoteTokenAccount"`
+	UserPoolTokenAccount  solana.PublicKey `json:"userPoolTokenAccount"`
+	PoolBaseTokenAccount  solana.PublicKey `json:"poolBaseTokenAccount"`
+	PoolQuoteTokenAccount solana.PublicKey `json:"poolQuoteTokenAccount"`
+	CoinCreatorVaultATA   solana.PublicKey `json:"coinCreatorVaultATA"`
 }
 
 // PoolParams represents pool parameters
 type PoolParams struct {
-	Index     uint16 `json:"index"`
+	Index     uint16           `json:"index"`
 	Creator   solana.PublicKey `json:"creator"`
 	BaseMint  solana.PublicKey `json:"baseMint"`
 	QuoteMint solana.PublicKey `json:"quoteMint"`
@@ -62,7 +62,7 @@ func GetGlobalConfigPDA() (PDAResult, error) {
 	if err != nil {
 		return PDAResult{}, fmt.Errorf("failed to find global config PDA: %w", err)
 	}
-	
+
 	return PDAResult{
 		Address: address,
 		Bump:    bump,
@@ -78,7 +78,7 @@ func GetEventAuthorityPumpSwapPDA() (PDAResult, error) {
 	if err != nil {
 		return PDAResult{}, fmt.Errorf("failed to find event authority PDA: %w", err)
 	}
-	
+
 	return PDAResult{
 		Address: address,
 		Bump:    bump,
@@ -90,7 +90,7 @@ func GetPoolPDA(index uint16, creator, baseMint, quoteMint solana.PublicKey) (PD
 	// Create index buffer (u16, little endian)
 	indexBuffer := make([]byte, 2)
 	binary.LittleEndian.PutUint16(indexBuffer, index)
-	
+
 	seeds := [][]byte{
 		SeedPool,
 		indexBuffer,
@@ -98,12 +98,12 @@ func GetPoolPDA(index uint16, creator, baseMint, quoteMint solana.PublicKey) (PD
 		baseMint[:],
 		quoteMint[:],
 	}
-	
+
 	address, bump, err := solana.FindProgramAddress(seeds, PumpAmmProgramID)
 	if err != nil {
 		return PDAResult{}, fmt.Errorf("failed to find pool PDA: %w", err)
 	}
-	
+
 	return PDAResult{
 		Address: address,
 		Bump:    bump,
@@ -119,7 +119,7 @@ func GetPoolLpMintPDA(pool solana.PublicKey) (PDAResult, error) {
 	if err != nil {
 		return PDAResult{}, fmt.Errorf("failed to find pool LP mint PDA: %w", err)
 	}
-	
+
 	return PDAResult{
 		Address: address,
 		Bump:    bump,
@@ -135,7 +135,7 @@ func GetCoinCreatorVaultAuthorityPDA(coinCreator solana.PublicKey) (PDAResult, e
 	if err != nil {
 		return PDAResult{}, fmt.Errorf("failed to find coin creator vault authority PDA: %w", err)
 	}
-	
+
 	return PDAResult{
 		Address: address,
 		Bump:    bump,
@@ -151,7 +151,7 @@ func GetGlobalVolumeAccumulatorPumpSwapPDA() (PDAResult, error) {
 	if err != nil {
 		return PDAResult{}, fmt.Errorf("failed to find global volume accumulator PDA: %w", err)
 	}
-	
+
 	return PDAResult{
 		Address: address,
 		Bump:    bump,
@@ -167,7 +167,7 @@ func GetUserVolumeAccumulatorPumpSwapPDA(user solana.PublicKey) (PDAResult, erro
 	if err != nil {
 		return PDAResult{}, fmt.Errorf("failed to find user volume accumulator PDA: %w", err)
 	}
-	
+
 	return PDAResult{
 		Address: address,
 		Bump:    bump,
@@ -181,12 +181,34 @@ func GetAssociatedTokenAddress(mint, owner solana.PublicKey) (solana.PublicKey, 
 		solana.TokenProgramID[:],
 		mint[:],
 	}
-	
+
 	address, _, err := solana.FindProgramAddress(seeds, solana.SPLAssociatedTokenAccountProgramID)
 	if err != nil {
 		return solana.PublicKey{}, fmt.Errorf("failed to find associated token address: %w", err)
 	}
-	
+
+	return address, nil
+}
+
+func GetAssociatedTokenAddress2022(
+	mint solana.PublicKey,
+	owner solana.PublicKey,
+) (solana.PublicKey, error) {
+
+	seeds := [][]byte{
+		owner.Bytes(),
+		solana.Token2022ProgramID.Bytes(),
+		mint.Bytes(),
+	}
+
+	address, _, err := solana.FindProgramAddress(
+		seeds,
+		solana.SPLAssociatedTokenAccountProgramID,
+	)
+	if err != nil {
+		return solana.PublicKey{}, fmt.Errorf("failed to find token-2022 associated token address: %w", err)
+	}
+
 	return address, nil
 }
 
@@ -194,7 +216,7 @@ func GetAssociatedTokenAddress(mint, owner solana.PublicKey) (solana.PublicKey, 
 func GetAllPumpSwapPDAs(user solana.PublicKey, creatorPubkey solana.PublicKey, baseMintPubkey solana.PublicKey, coinCreatorPubkey solana.PublicKey) (*PumpSwapPDAInfo, error) {
 	info := &PumpSwapPDAInfo{}
 	var err error
-	
+
 	// For PumpSwap, we typically use WSOL as quote mint and index 0
 	quoteMint := WSolMint
 	poolParams := PoolParams{
@@ -203,96 +225,96 @@ func GetAllPumpSwapPDAs(user solana.PublicKey, creatorPubkey solana.PublicKey, b
 		BaseMint:  baseMintPubkey,
 		QuoteMint: quoteMint,
 	}
-	
+
 	// Get global config PDA
 	info.GlobalConfig, err = GetGlobalConfigPDA()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get global config PDA: %w", err)
 	}
-	
+
 	// Get event authority PDA
 	info.EventAuthority, err = GetEventAuthorityPumpSwapPDA()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get event authority PDA: %w", err)
 	}
-	
+
 	// Get pool PDA
 	info.Pool, err = GetPoolPDA(poolParams.Index, poolParams.Creator, poolParams.BaseMint, poolParams.QuoteMint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pool PDA: %w", err)
 	}
-	
+
 	// Get LP mint PDA
 	info.PoolLpMint, err = GetPoolLpMintPDA(info.Pool.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pool LP mint PDA: %w", err)
 	}
-	
+
 	// Get coin creator vault authority PDA
 	info.CoinCreatorVaultAuthority, err = GetCoinCreatorVaultAuthorityPDA(coinCreatorPubkey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get coin creator vault authority PDA: %w", err)
 	}
-	
+
 	// Get global volume accumulator PDA
 	info.GlobalVolumeAccumulator, err = GetGlobalVolumeAccumulatorPumpSwapPDA()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get global volume accumulator PDA: %w", err)
 	}
-	
+
 	// Get user volume accumulator PDA
 	info.UserVolumeAccumulator, err = GetUserVolumeAccumulatorPumpSwapPDA(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user volume accumulator PDA: %w", err)
 	}
-	
+
 	// Get bonding curve PDA (from PumpFun program)
 	bondingCurveAddr, bondingCurveBump, err := GetBondingCurvePDA(poolParams.BaseMint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bonding curve PDA: %w", err)
 	}
 	info.BondingCurve = PDAResult{Address: bondingCurveAddr, Bump: bondingCurveBump}
-	
+
 	// Get metadata PDA
 	metadataAddr, metadataBump, err := GetMetadataPDA(poolParams.BaseMint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get metadata PDA: %w", err)
 	}
 	info.Metadata = PDAResult{Address: metadataAddr, Bump: metadataBump}
-	
+
 	// Get user token accounts
 	info.UserBaseTokenAccount, err = GetAssociatedTokenAddress(poolParams.BaseMint, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user base token account: %w", err)
 	}
-	
+
 	info.UserQuoteTokenAccount, err = GetAssociatedTokenAddress(poolParams.QuoteMint, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user quote token account: %w", err)
 	}
-	
+
 	info.UserPoolTokenAccount, err = GetAssociatedTokenAddress(info.PoolLpMint.Address, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user pool token account: %w", err)
 	}
-	
+
 	// Get pool token accounts
 	info.PoolBaseTokenAccount, err = GetAssociatedTokenAddress(poolParams.BaseMint, info.Pool.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pool base token account: %w", err)
 	}
-	
+
 	info.PoolQuoteTokenAccount, err = GetAssociatedTokenAddress(poolParams.QuoteMint, info.Pool.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pool quote token account: %w", err)
 	}
-	
+
 	// Get coin creator vault ATA
 	info.CoinCreatorVaultATA, err = GetAssociatedTokenAddress(poolParams.QuoteMint, info.CoinCreatorVaultAuthority.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get coin creator vault ATA: %w", err)
 	}
-	
+
 	return info, nil
 }
 

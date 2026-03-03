@@ -109,7 +109,7 @@ func MultiTransferMintToTarget(
 	}
 
 	// --- Ensure target ATA exists ---
-	targetATA, err := GetAssociatedTokenAddress(mintPubkey, targetPubkey)
+	targetATA, err := GetAssociatedTokenAddress2022(mintPubkey, targetPubkey)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func MultiTransferMintToTarget(
 		if bal.Balance == 0 {
 			continue
 		}
-		sourceATA, err := GetAssociatedTokenAddress(mintPubkey, accountMap[addr])
+		sourceATA, err := GetAssociatedTokenAddress2022(mintPubkey, accountMap[addr])
 		if err != nil {
 			continue
 		}
