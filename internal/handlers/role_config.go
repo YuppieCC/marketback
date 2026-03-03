@@ -1266,8 +1266,8 @@ func TransferMintToTargetByRole(c *gin.Context) {
 	// Create RPC client
 	client := rpc.New(solanaRPC)
 
-	// Call MultiTransferMintToTarget
-	results, err := solanaUtils.MultiTransferMintToTarget(
+	// Call MultiTransferMintToTargetV2
+	results, err := solanaUtils.MultiTransferMintToTargetV2(
 		client,
 		accounts,
 		request.Mint,
