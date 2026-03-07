@@ -1458,6 +1458,22 @@ func GetDisposableAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, address)
 }
 
+// GetDisposableAddressByAddress returns a specific disposable managed address by address string
+func GetDisposableAddressByAddress(c *gin.Context) {
+	addressStr := c.Param("address")
+	if addressStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Address parameter is required"})
+		return
+	}
+
+	var address models.DisposableAddressManage
+	if err := dbconfig.DB.Where("address = ?", addressStr).First(&address).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+		return
+	}
+	c.JSON(http.StatusOK, address)
+}
+
 // CreateDisposableAddress creates a new disposable managed address
 func CreateDisposableAddress(c *gin.Context) {
 	var request DisposableAddressRequest
