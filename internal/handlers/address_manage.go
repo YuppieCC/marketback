@@ -1474,6 +1474,16 @@ func GetDisposableAddressByAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, address)
 }
 
+// GetDeprecatedDisposableAddress returns all disposable addresses where IsDeprecated is true
+func GetDeprecatedDisposableAddress(c *gin.Context) {
+	var addresses []models.DisposableAddressManage
+	if err := dbconfig.DB.Where("is_deprecated = ?", true).Find(&addresses).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, addresses)
+}
+
 // CreateDisposableAddress creates a new disposable managed address
 func CreateDisposableAddress(c *gin.Context) {
 	var request DisposableAddressRequest

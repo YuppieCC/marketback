@@ -46,6 +46,7 @@ func SetupAddressManageRoutes(r *gin.Engine) {
 	{
 		disposableAddress.GET("", handlers.ListDisposableAddresses)
 		disposableAddress.GET("/by-address/:address", handlers.GetDisposableAddressByAddress)
+		disposableAddress.GET("/deprecated", handlers.GetDeprecatedDisposableAddress)
 		disposableAddress.GET("/:id", handlers.GetDisposableAddress)
 		disposableAddress.POST("", handlers.CreateDisposableAddress)
 		disposableAddress.POST("/generate", handlers.GenerateDisposableAddresses)
