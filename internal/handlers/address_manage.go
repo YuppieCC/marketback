@@ -2446,6 +2446,174 @@ func ImportCsv(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// ImportCsvWithBase58 handles the import of addresses from a CSV file with Base58 private keys
+// The CSV should contain "Address" and "PrivateKey" columns (PrivateKey in Base58 format)
+// Private keys will be encrypted before storing in the database
+func ImportCsvWithBase58(c *gin.Context) {
+	// Parse multipart form
+	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // 10 MB max
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
+		return
+	}
+
+	// Get uploaded file
+	file, _, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get file: " + err.Error()})
+		return
+	}
+	defer file.Close()
+
+	// Get encryption password from environment variable
+	encryptPassword := os.Getenv("ENCRYPTPASSWORD")
+	if encryptPassword == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ENCRYPTPASSWORD environment variable not set"})
+		return
+	}
+
+	// Initialize KeyManager
+	km := solana.NewKeyManager()
+
+	// Read and parse the CSV file
+	reader := csv.NewReader(file)
+	reader.TrimLeadingSpace = true
+
+	// Read header row
+	header, err := reader.Read()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read CSV header: " + err.Error()})
+		return
+	}
+
+	// Find column indices (support both "Address"/"PrivateKey" and "address"/"private_key")
+	addressIdx := -1
+	privateKeyIdx := -1
+	for i, col := range header {
+		switch col {
+		case "Address", "address":
+			addressIdx = i
+		case "PrivateKey", "private_key":
+			privateKeyIdx = i
+		}
+	}
+
+	if addressIdx == -1 || privateKeyIdx == -1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "CSV must contain 'Address' and 'PrivateKey' columns"})
+		return
+	}
+
+	// Get existing addresses to avoid duplicates
+	var existingAddresses []models.AddressManage
+	if err := dbconfig.DB.Find(&existingAddresses).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch existing addresses: " + err.Error()})
+		return
+	}
+
+	existingAddressMap := make(map[string]bool)
+	for _, addr := range existingAddresses {
+		existingAddressMap[addr.Address] = true
+	}
+
+	// Track new addresses to import
+	var newAddresses []models.AddressManage
+	var skippedCount int
+	var errorCount int
+	var errorMessages []string
+
+	// Read data rows
+	lineNum := 1 // Start from 1 (header is line 0)
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errorCount++
+			errorMessages = append(errorMessages, fmt.Sprintf("Line %d: Failed to read CSV row: %v", lineNum+1, err))
+			continue
+		}
+
+		lineNum++
+
+		// Check if we have enough columns
+		if len(record) <= addressIdx || len(record) <= privateKeyIdx {
+			errorCount++
+			errorMessages = append(errorMessages, fmt.Sprintf("Line %d: Insufficient columns", lineNum))
+			continue
+		}
+
+		address := record[addressIdx]
+		privateKeyBase58 := record[privateKeyIdx]
+
+		// Skip empty rows
+		if address == "" || privateKeyBase58 == "" {
+			continue
+		}
+
+		// Skip if address already exists
+		if existingAddressMap[address] {
+			skippedCount++
+			continue
+		}
+
+		// Validate address format (basic check - should be base58)
+		if len(address) < 32 || len(address) > 44 {
+			errorCount++
+			errorMessages = append(errorMessages, fmt.Sprintf("Line %d: Invalid address format: %s", lineNum, address))
+			continue
+		}
+
+		// Convert Base58 private key to byte array
+		privateKeyBytes, err := km.Base58ToByteArray(privateKeyBase58)
+		if err != nil {
+			errorCount++
+			errorMessages = append(errorMessages, fmt.Sprintf("Line %d: Failed to decode Base58 private key: %v", lineNum, err))
+			continue
+		}
+
+		// Encrypt the private key
+		encryptedKey, err := km.EncryptPrivateKey(privateKeyBytes, encryptPassword)
+		if err != nil {
+			errorCount++
+			errorMessages = append(errorMessages, fmt.Sprintf("Line %d: Failed to encrypt private key: %v", lineNum, err))
+			continue
+		}
+
+		// Add to new addresses list
+		newAddresses = append(newAddresses, models.AddressManage{
+			Address:    address,
+			PrivateKey: encryptedKey,
+		})
+
+		// Mark as existing to avoid duplicates in the same import
+		existingAddressMap[address] = true
+	}
+
+	// Import new addresses
+	var importedCount int
+	if len(newAddresses) > 0 {
+		if err := dbconfig.DB.Create(&newAddresses).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to import new addresses: " + err.Error()})
+			return
+		}
+		importedCount = len(newAddresses)
+	}
+
+	response := gin.H{
+		"message":         fmt.Sprintf("Successfully imported %d new addresses", importedCount),
+		"imported_count":  importedCount,
+		"skipped_count":   skippedCount,
+		"error_count":     errorCount,
+		"total_processed": lineNum - 1,
+	}
+
+	if len(errorMessages) > 0 {
+		response["errors"] = errorMessages
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 // ImportCsvInDisposableAddressManage handles the import of disposable addresses from a CSV file
 func ImportCsvInDisposableAddressManage(c *gin.Context) {
 	// Parse multipart form

@@ -26,6 +26,7 @@ func SetupAddressManageRoutes(r *gin.Engine) {
 		address.POST("/check-exists", handlers.CheckAddressExists)
 		address.POST("/multi-transfer-sol", handlers.MultiTransferSol)
 		address.POST("/import-csv", handlers.ImportCsv)
+		address.POST("/import-csv-with-base58", handlers.ImportCsvWithBase58)
 	}
 
 	// Address Config routes
