@@ -196,6 +196,64 @@ func DecryptPrivateKey(c *gin.Context) {
 	})
 }
 
+// SecretConverterRequest represents the request body for converting private key format
+type SecretConverterRequest struct {
+	PrivateKey string `json:"private_key" binding:"required"`
+	Format     string `json:"format" binding:"required"`
+}
+
+// SecretConverter converts private key between Base58 and byte array formats
+func SecretConverter(c *gin.Context) {
+	var request SecretConverterRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	km := solana.NewKeyManager()
+
+	switch request.Format {
+	case "base58":
+		var privateKeyBytes []byte
+		if err := json.Unmarshal([]byte(request.PrivateKey), &privateKeyBytes); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid byte array format: " + err.Error()})
+			return
+		}
+
+		base58Key, err := km.ByteArrayToBase58(privateKeyBytes)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to convert to base58: " + err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"result": base58Key,
+			"format": "base58",
+		})
+
+	case "byte_array":
+		byteArray, err := km.Base58ToByteArray(request.PrivateKey)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to convert to byte array: " + err.Error()})
+			return
+		}
+
+		// Convert []byte to []int to avoid base64 encoding in JSON
+		intArray := make([]int, len(byteArray))
+		for i, b := range byteArray {
+			intArray[i] = int(b)
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"result": intArray,
+			"format": "byte_array",
+		})
+
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format. Must be 'base58' or 'byte_array'"})
+	}
+}
+
 // ListAddressesByRole returns managed addresses associated with a specific role
 func ListAddressesByRole(c *gin.Context) {
 	roleID, err := strconv.Atoi(c.Param("role_id"))

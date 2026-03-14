@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/blocto/solana-go-sdk/types"
+	"github.com/mr-tron/base58"
 )
 
 // KeyStoreEntry represents a keystore entry with metadata
@@ -216,4 +217,22 @@ func (km *KeyManager) GetSolanaAddressFromPrivateKey(privateKey []byte) (string,
 func deriveKey(password string) []byte {
 	hash := sha256.Sum256([]byte(password))
 	return hash[:]
+}
+
+// Base58ToByteArray converts a private key from Base58 format to byte array
+func (km *KeyManager) Base58ToByteArray(privateKey string) ([]byte, error) {
+	decoded, err := base58.Decode(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode base58 private key: %w", err)
+	}
+	return decoded, nil
+}
+
+// ByteArrayToBase58 converts a private key from byte array to Base58 format
+func (km *KeyManager) ByteArrayToBase58(privateKey []byte) (string, error) {
+	if len(privateKey) == 0 {
+		return "", errors.New("private key cannot be empty")
+	}
+	encoded := base58.Encode(privateKey)
+	return encoded, nil
 }

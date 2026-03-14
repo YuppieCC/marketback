@@ -17,6 +17,7 @@ func SetupAddressManageRoutes(r *gin.Engine) {
 		address.DELETE("/:id", handlers.DeleteAddress)
 		address.POST("/decrypt", handlers.DecryptPrivateKey)
 		address.POST("/export-with-new-password", handlers.ExportWithNewPassword)
+		address.POST("/secret-converter", handlers.SecretConverter)
 		address.POST("/export-with-new-password/role/:rold_id", handlers.ExportWithNewPasswordFromRole)
 		address.POST("/export-with-gmgn-track-format/role/:role_id", handlers.ExportWithGmgnTrackFormatFromRole)
 		address.POST("/import-and-verify-password", handlers.ImportAndVerifyPassword)
