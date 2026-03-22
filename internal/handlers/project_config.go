@@ -2454,18 +2454,22 @@ func UpdateAssetsBalance(c *gin.Context) {
 	// Build response
 	resp := buildProjectConfigResp(&project)
 
-	// If ProjectProfit < -0.2, set IsLocked to true
-	// if resp != nil && resp.ProjectProfit < -0.25 {
-	// 	project.IsLocked = true
-	// 	if err := dbconfig.DB.Save(&project).Error; err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update IsLocked: " + err.Error()})
-	// 		return
-	// 	}
-	// 	// Reload project and rebuild response
-	// 	if err := dbconfig.DB.Preload("Token").First(&project, project.ID).Error; err == nil {
-	// 		resp = buildProjectConfigResp(&project)
-	// 	}
-	// }
+	// Sync IsLocked with ProjectProfit: lock if < -0.5, unlock if >= -0.5
+	if resp != nil {
+		if resp.ProjectProfit < -0.5 {
+			project.IsLocked = true
+		} else {
+			project.IsLocked = false
+		}
+		if err := dbconfig.DB.Save(&project).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update IsLocked: " + err.Error()})
+			return
+		}
+		// Reload project and rebuild response
+		if err := dbconfig.DB.Preload("Token").First(&project, project.ID).Error; err == nil {
+			resp = buildProjectConfigResp(&project)
+		}
+	}
 
 	c.JSON(http.StatusOK, resp)
 }
