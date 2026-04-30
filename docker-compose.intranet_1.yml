@@ -22,7 +22,7 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
-      - ALLOWED_ORIGINS=http://localhost:3010,http://localhost:3011,http://localhost:3013,http://192.168.10.4:3010
+      - ALLOWED_ORIGINS=http://localhost:3010,http://localhost:3011,http://localhost:3013,http://192.168.10.3:3010
     volumes:
       - ./:/app
       - go-mod-cache:/go/pkg/mod
@@ -107,8 +107,8 @@ services:
       - DB_NAME=marketcontrol_test
       - DB_PORT=5432
       - HELIUS_API_KEY=b94d046f-3bcd-45d9-85d9-543118c6dd3d
-      - DEFAULT_SOLANA_RPC=https://alpha-polished-putty.solana-mainnet.quiknode.pro/f483a69da2e4db2a6cfc9115a27ad7c0a4527df9/
-      - DEFAULT_SOLANA_WSS=wss://alpha-polished-putty.solana-mainnet.quiknode.pro/f483a69da2e4db2a6cfc9115a27ad7c0a4527df9/
+      - DEFAULT_SOLANA_RPC=https://solitary-cold-wave.solana-mainnet.quiknode.pro/63b3a44f21ffd8834ba23667f9979e8d3ba06d6f/
+      - DEFAULT_SOLANA_WSS=wss://solitary-cold-wave.solana-mainnet.quiknode.pro/63b3a44f21ffd8834ba23667f9979e8d3ba06d6f/
       - RABBITMQ_HOST=rabbitmq_intranet_3010
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
