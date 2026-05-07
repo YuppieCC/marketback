@@ -113,14 +113,13 @@ type PoolMonitorManager struct {
 func NewPoolMonitorManager() (*PoolMonitorManager, error) {
 	rpcEndpoint := os.Getenv("DEFAULT_SOLANA_RPC")
 	if rpcEndpoint == "" {
-		rpcEndpoint = "https://responsive-prettiest-star.solana-mainnet.quiknode.pro/a89ffa3856d2b33cbe2601c466ca8c884c9f3e3b/"
+		rpcEndpoint = "https://solitary-cold-wave.solana-mainnet.quiknode.pro/63b3a44f21ffd8834ba23667f9979e8d3ba06d6f/"
 	}
 
 	// Get WebSocket endpoint from environment (required)
 	wsEndpoint := os.Getenv("DEFAULT_SOLANA_WSS")
 	if wsEndpoint == "" {
-		wsEndpoint = "wss://responsive-prettiest-star.solana-mainnet.quiknode.pro/a89ffa3856d2b33cbe2601c466ca8c884c9f3e3b/"
-
+		wsEndpoint = "wss://solitary-cold-wave.solana-mainnet.quiknode.pro/63b3a44f21ffd8834ba23667f9979e8d3ba06d6f/"
 	}
 
 	return &PoolMonitorManager{
