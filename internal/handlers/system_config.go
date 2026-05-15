@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -156,6 +157,35 @@ func DeleteSystemLog(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "System log deleted successfully"})
+}
+
+// CleanSystemLog deletes system logs created before the requested day threshold.
+func CleanSystemLog(c *gin.Context) {
+	var req struct {
+		Before int `json:"before"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	if req.Before < 7 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "before must be at least 7"})
+		return
+	}
+
+	cutoff := time.Now().AddDate(0, 0, -req.Before)
+	result := dbconfig.DB.Where("created_at < ?", cutoff).Delete(&models.SystemLog{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "System logs cleaned successfully",
+		"before":        req.Before,
+		"cutoff":        cutoff,
+		"deleted_count": result.RowsAffected,
+	})
 }
 
 // ListSystemLogsByProject lists logs filtered by project_id with pagination

@@ -3572,6 +3572,35 @@ func DeleteSwapTransaction(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Record deleted successfully"})
 }
 
+// CleanSwapTransaction deletes swap transactions created before the requested day threshold.
+func CleanSwapTransaction(c *gin.Context) {
+	var req struct {
+		Before int `json:"before"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	if req.Before < 7 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "before must be at least 7"})
+		return
+	}
+
+	cutoff := time.Now().AddDate(0, 0, -req.Before)
+	result := dbconfig.DB.Where("created_at < ?", cutoff).Delete(&models.SwapTransaction{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Swap transactions cleaned successfully",
+		"before":        req.Before,
+		"cutoff":        cutoff,
+		"deleted_count": result.RowsAffected,
+	})
+}
+
 // FilterSwapTransactions filters swap transactions based on criteria
 func FilterSwapTransactions(c *gin.Context) {
 	var req struct {

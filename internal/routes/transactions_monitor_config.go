@@ -167,6 +167,7 @@ func SetupTransactionsMonitorConfigRoutes(r *gin.Engine) {
 		swapTransactionGroup.GET("", handlers.ListSwapTransactions)
 		swapTransactionGroup.PUT("/:id", handlers.UpdateSwapTransaction)
 		swapTransactionGroup.DELETE("/:id", handlers.DeleteSwapTransaction)
+		swapTransactionGroup.POST("/clean", handlers.CleanSwapTransaction)
 		swapTransactionGroup.POST("/filter", handlers.FilterSwapTransactions)
 		swapTransactionGroup.GET("/pool/:pool_id", handlers.ListSwapTransactionsByPoolID)
 		swapTransactionGroup.GET("/project/v2/:project_id", handlers.GetSwapTransactionsByProjectV2)

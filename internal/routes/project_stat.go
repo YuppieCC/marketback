@@ -27,6 +27,7 @@ func SetupProjectStatRoutes(r *gin.Engine) {
 		walletStat.POST("/remove-duplicate", handlers.RemoveDuplicateWalletTokenStat)
 		walletStat.POST("/locate-duplicate", handlers.LocateDuplicateWalletTokenStat)
 		walletStat.POST("/update-from-source", handlers.UpdateWalletTokenStatFromSource)
+		walletStat.POST("/clean", handlers.CleanWalletTokenStat)
 	}
 
 	poolStat := r.Group("/pool-stat")

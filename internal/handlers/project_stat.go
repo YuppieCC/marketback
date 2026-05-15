@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -39,6 +40,35 @@ func GetWalletTokenStat(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, stat)
+}
+
+// CleanWalletTokenStat deletes wallet token stats created before the requested day threshold.
+func CleanWalletTokenStat(c *gin.Context) {
+	var req struct {
+		Before int `json:"before"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	if req.Before < 7 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "before must be at least 7"})
+		return
+	}
+
+	cutoff := time.Now().AddDate(0, 0, -req.Before)
+	result := dbconfig.DB.Where("created_at < ?", cutoff).Delete(&models.WalletTokenStat{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Wallet token stats cleaned successfully",
+		"before":        req.Before,
+		"cutoff":        cutoff,
+		"deleted_count": result.RowsAffected,
+	})
 }
 
 // GetWalletTokenStatsByAddress 获取指定地址的所有代币统计信息

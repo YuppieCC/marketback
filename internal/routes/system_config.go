@@ -15,6 +15,7 @@ func SetupSystemConfigRoutes(r *gin.Engine) {
 		logs.GET("/:id", handlers.GetSystemLog)
 		logs.POST("", handlers.CreateSystemLog)
 		logs.DELETE("/:id", handlers.DeleteSystemLog)
+		logs.POST("/clean", handlers.CleanSystemLog)
 	}
 
 	params := r.Group("/system-params")
