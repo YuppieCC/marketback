@@ -14,8 +14,8 @@ import (
 	dbconfig "marketcontrol/pkg/config"
 	mcsolana "marketcontrol/pkg/solana"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -175,6 +175,253 @@ func GetProjectProfitRanking(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// ProjectProfitRecordRequest is the body for POST /project-settle/profit-record
+type ProjectProfitRecordRequest struct {
+	Interval   string `json:"interval" binding:"required"` // daily, weekly, monthly
+	Page       int    `json:"page"`
+	PageSize   int    `json:"page_size"`
+	OrderField string `json:"order_field"`
+	OrderType  string `json:"order_type"`
+}
+
+// ProjectProfitRecordItem is one period's last AssetsBalance and derived project_profit
+type ProjectProfitRecordItem struct {
+	PeriodStart string `json:"period_start"`
+	PeriodEnd   string `json:"period_end"`
+	PeriodCount int    `json:"period_count"`
+	ProjectSettleResp
+}
+
+type periodBucket struct {
+	start   time.Time
+	project models.ProjectConfig
+	count   int
+}
+
+func projectProfitPeriodStart(t time.Time, interval string) time.Time {
+	utc := t.UTC()
+	switch interval {
+	case "daily":
+		return time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC)
+	case "weekly":
+		// Week starts Monday 00:00 UTC, ends Sunday 23:59:59.999999999 UTC
+		daysSinceMonday := (int(utc.Weekday()) + 6) % 7
+		monday := utc.AddDate(0, 0, -daysSinceMonday)
+		return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
+	case "monthly":
+		return time.Date(utc.Year(), utc.Month(), 1, 0, 0, 0, 0, time.UTC)
+	default:
+		return utc
+	}
+}
+
+func projectProfitPeriodEnd(start time.Time, interval string) time.Time {
+	switch interval {
+	case "daily":
+		return start.AddDate(0, 0, 1).Add(-time.Nanosecond)
+	case "weekly":
+		return start.AddDate(0, 0, 7).Add(-time.Nanosecond)
+	case "monthly":
+		return start.AddDate(0, 1, 0).Add(-time.Nanosecond)
+	default:
+		return start
+	}
+}
+
+func isLaterProject(a, b models.ProjectConfig) bool {
+	if a.CreatedAt.After(b.CreatedAt) {
+		return true
+	}
+	if a.CreatedAt.Equal(b.CreatedAt) && a.ID > b.ID {
+		return true
+	}
+	return false
+}
+
+func buildProjectSettleResp(project *models.ProjectConfig, projectProfit float64) ProjectSettleResp {
+	token := models.TokenConfig{}
+	if project.Token != nil {
+		token = *project.Token
+	}
+	return ProjectSettleResp{
+		ID:                project.ID,
+		Name:              project.Name,
+		PoolPlatform:      project.PoolPlatform,
+		PoolID:            project.PoolID,
+		TokenID:           project.TokenID,
+		TokenMetadataID:   project.TokenMetadataID,
+		IsActive:          project.IsActive,
+		UpdateStatEnabled: project.UpdateStatEnabled,
+		IsMigrated:        project.IsMigrated,
+		IsLocked:          project.IsLocked,
+		AssetsBalance:     project.AssetsBalance,
+		RetailSolAmount:   project.RetailSolAmount,
+		PoolConfig:        project.PoolConfig,
+		ProjectProfit:     projectProfit,
+		CreatedAt:         project.CreatedAt.Format("2006-01-02T15:04:05.999999Z"),
+		UpdatedAt:         project.UpdatedAt.Format("2006-01-02T15:04:05.999999Z"),
+		Token:             &token,
+	}
+}
+
+// GetProjectProfitRecord groups ProjectConfig by interval (daily, weekly, monthly), takes the
+// last AssetsBalance per period, computes period-over-period project_profit, filters extremes,
+// then returns paginated results.
+func GetProjectProfitRecord(c *gin.Context) {
+	var req ProjectProfitRecordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	interval := strings.ToLower(strings.TrimSpace(req.Interval))
+	switch interval {
+	case "daily", "weekly", "monthly":
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "interval must be daily, weekly, or monthly"})
+		return
+	}
+
+	page := 1
+	if req.Page > 0 {
+		page = req.Page
+	}
+	pageSize := 100
+	if req.PageSize > 0 {
+		if req.PageSize > 100 {
+			pageSize = 100
+		} else {
+			pageSize = req.PageSize
+		}
+	}
+
+	orderField := "created_at"
+	if req.OrderField != "" {
+		switch req.OrderField {
+		case "created_at", "project_profit", "assets_balance":
+			orderField = req.OrderField
+		}
+	}
+
+	orderType := "desc"
+	if ot := strings.ToLower(req.OrderType); ot == "asc" || ot == "desc" {
+		orderType = ot
+	}
+
+	var projects []models.ProjectConfig
+	if err := dbconfig.DB.Preload("Token").Order("created_at asc, id asc").Find(&projects).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	bucketMap := make(map[int64]periodBucket)
+	for i := range projects {
+		p := projects[i]
+		start := projectProfitPeriodStart(p.CreatedAt, interval)
+		key := start.Unix()
+		existing, ok := bucketMap[key]
+		if !ok {
+			bucketMap[key] = periodBucket{start: start, project: p, count: 1}
+			continue
+		}
+		existing.count++
+		if isLaterProject(p, existing.project) {
+			existing.project = p
+		}
+		bucketMap[key] = existing
+	}
+
+	if len(bucketMap) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"data": []ProjectProfitRecordItem{},
+			"pagination": gin.H{
+				"current_page": page,
+				"page_size":    pageSize,
+				"total_pages":  1,
+				"total_count":  0,
+				"has_next":     false,
+				"has_prev":     false,
+			},
+			"interval": interval,
+		})
+		return
+	}
+
+	keys := make([]int64, 0, len(bucketMap))
+	for k := range bucketMap {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+
+	var results []ProjectProfitRecordItem
+	var prevBalance *float64
+	for _, key := range keys {
+		b := bucketMap[key]
+		periodEnd := projectProfitPeriodEnd(b.start, interval)
+
+		projectProfit := 0.0
+		if prevBalance != nil {
+			projectProfit = b.project.AssetsBalance - *prevBalance
+		}
+		balance := b.project.AssetsBalance
+		prevBalance = &balance
+
+		if projectProfit < IGNORE_EXTREMUM_RANGE_MIN || projectProfit > IGNORE_EXTREMUM_RANGE_MAX {
+			continue
+		}
+
+		results = append(results, ProjectProfitRecordItem{
+			PeriodStart:       b.start.Format("2006-01-02T15:04:05.999999Z"),
+			PeriodEnd:         periodEnd.Format("2006-01-02T15:04:05.999999Z"),
+			PeriodCount:       b.count,
+			ProjectSettleResp: buildProjectSettleResp(&b.project, projectProfit),
+		})
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		var less bool
+		switch orderField {
+		case "project_profit":
+			less = results[i].ProjectProfit < results[j].ProjectProfit
+		case "assets_balance":
+			less = results[i].AssetsBalance < results[j].AssetsBalance
+		default:
+			less = results[i].PeriodStart < results[j].PeriodStart
+		}
+		if orderType == "desc" {
+			return !less
+		}
+		return less
+	})
+
+	total := len(results)
+	totalPages := (total + pageSize - 1) / pageSize
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	offset := (page - 1) * pageSize
+	end := offset + pageSize
+	if end > total {
+		end = total
+	}
+	var paginated []ProjectProfitRecordItem
+	if offset < total {
+		paginated = results[offset:end]
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": paginated,
+		"pagination": gin.H{
+			"current_page": page,
+			"page_size":    pageSize,
+			"total_pages":  totalPages,
+			"total_count":  total,
+			"has_next":     page < totalPages,
+			"has_prev":     page > 1,
+		},
+		"interval": interval,
+	})
 }
 
 // VestingReviewRequest represents the request body for vesting review
@@ -393,11 +640,11 @@ func FixErrorVesting(c *gin.Context) {
 		// Create SystemLog for this fix
 		sysLog := models.SystemLog{
 			ProjectID:  project.ID,
-			Level:       "INFO",
-			Message:     "修改锁仓异常数据",
-			Module:      "FixErrorVesting",
-			ErrorStack:  "",
-			Meta:        models.JSONMap{"id": item.ID, "status": item.Status, "pool_remove_amount": item.PoolRemoveAmount},
+			Level:      "INFO",
+			Message:    "修改锁仓异常数据",
+			Module:     "FixErrorVesting",
+			ErrorStack: "",
+			Meta:       models.JSONMap{"id": item.ID, "status": item.Status, "pool_remove_amount": item.PoolRemoveAmount},
 		}
 		if err := dbconfig.DB.Create(&sysLog).Error; err != nil {
 			errMsgs = append(errMsgs, "project id "+strconv.Itoa(int(item.ID))+" create system log: "+err.Error())
@@ -415,8 +662,8 @@ func FixErrorVesting(c *gin.Context) {
 
 // FetchCreatorBalanceChangeRequest represents the request body for fetching creator SOL balance change from a signature
 type FetchCreatorBalanceChangeRequest struct {
-	ProjectID  uint   `json:"project_id" binding:"required"`
-	Signature  string `json:"signature" binding:"required"`
+	ProjectID uint   `json:"project_id" binding:"required"`
+	Signature string `json:"signature" binding:"required"`
 }
 
 // FetchCreatorBalanceChange gets ProjectConfig by project_id, reads creator from Vesting, then returns the creator's SOL balance change (readable) for the given signature
