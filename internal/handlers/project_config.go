@@ -46,26 +46,27 @@ type ProjectConfigRequest struct {
 
 // ProjectConfigResp represents the response structure for a project config
 type ProjectConfigResp struct {
-	ID              uint                `json:"id"`
-	Name            string              `json:"name"`
-	PoolPlatform    string              `json:"pool_platform"`
-	PoolID          uint                `json:"pool_id"`
-	TokenID         uint                `json:"token_id"`
-	TokenMetadataID uint                `json:"token_metadata_id"`
-	IsActive        bool                `json:"is_active"`
-	IsMigrated      bool                `json:"is_migrated"`
-	IsLocked        bool                `json:"is_locked"`
-	AssetsBalance   float64             `json:"assets_balance"`
-	RetailSolAmount float64             `json:"retail_sol_amount"`
-	PoolConfig      string              `json:"pool_config"`
-	Event           json.RawMessage     `json:"event"`
-	Vesting         json.RawMessage     `json:"vesting"`
-	ProjectProfit   float64             `json:"project_profit"`
-	CreatedAt       time.Time           `json:"created_at"`
-	UpdatedAt       time.Time           `json:"updated_at"`
-	Pool            interface{}         `json:"pool,omitempty"`
-	Token           *models.TokenConfig `json:"token,omitempty"`
-	PoolRelation    interface{}         `json:"pool_relation"`
+	ID              uint                 `json:"id"`
+	Name            string               `json:"name"`
+	PoolPlatform    string               `json:"pool_platform"`
+	PoolID          uint                 `json:"pool_id"`
+	TokenID         uint                 `json:"token_id"`
+	TokenMetadataID uint                 `json:"token_metadata_id"`
+	IsActive        bool                 `json:"is_active"`
+	IsMigrated      bool                 `json:"is_migrated"`
+	IsLocked        bool                 `json:"is_locked"`
+	AssetsBalance   float64              `json:"assets_balance"`
+	RetailSolAmount float64              `json:"retail_sol_amount"`
+	PoolConfig      string               `json:"pool_config"`
+	Event           json.RawMessage      `json:"event"`
+	Vesting         json.RawMessage      `json:"vesting"`
+	ProjectProfit   float64              `json:"project_profit"`
+	CreatedAt       time.Time            `json:"created_at"`
+	UpdatedAt       time.Time            `json:"updated_at"`
+	Pool            interface{}          `json:"pool,omitempty"`
+	Token           *models.TokenConfig  `json:"token,omitempty"`
+	PoolRelation    interface{}          `json:"pool_relation"`
+	Status          *models.ProjecStatus `json:"status,omitempty"`
 }
 
 // ListProjectConfigs returns a list of all project configs
@@ -667,6 +668,12 @@ func buildProjectConfigResp(project *models.ProjectConfig) *ProjectConfigResp {
 		// 如果找不到上一个 id，projectProfit 保持为 0.0（默认值）
 	}
 
+	var projecStatus *models.ProjecStatus
+	var statusRow models.ProjecStatus
+	if err := dbconfig.DB.Where("project_id = ?", project.ID).First(&statusRow).Error; err == nil {
+		projecStatus = &statusRow
+	}
+
 	return &ProjectConfigResp{
 		ID:              project.ID,
 		Name:            project.Name,
@@ -688,6 +695,7 @@ func buildProjectConfigResp(project *models.ProjectConfig) *ProjectConfigResp {
 		Pool:            pool,
 		Token:           &token,
 		PoolRelation:    poolRelation,
+		Status:          projecStatus,
 	}
 }
 
@@ -1199,6 +1207,384 @@ func DeleteProjectExtraAddress(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Project extra address deleted successfully"})
+}
+
+// ProjecStatusRequest 项目状态请求结构
+type ProjecStatusRequest struct {
+	ProjectID                      uint    `json:"project_id" binding:"required"`
+	LastCheckpoint                 *uint64 `json:"last_checkpoint"`
+	IsLaunchSuc                    *bool   `json:"is_launch_suc"`
+	IsRemoveLiquidSuc              *bool   `json:"is_remove_liquid_suc"`
+	IsCollectSuc                   *bool   `json:"is_collect_suc"`
+	IsSplitSuc                     *bool   `json:"is_split_suc"`
+	IsRecordSuc                    *bool   `json:"is_record_suc"`
+	IsSoldOutSuc                   *bool   `json:"is_sold_out_suc"`
+	IsTrench                       *bool   `json:"is_trench"`
+	IsMigrateSuc                   *bool   `json:"is_migrate_suc"`
+	LastCheckLaunchTimestamp       *uint64 `json:"last_check_launch_timestamp"`
+	LastCheckRemoveLiquidTimestamp *uint64 `json:"last_check_remove_liquid_timestamp"`
+	LastCheckCollectTimestamp      *uint64 `json:"last_check_collect_timestamp"`
+	LastCheckSplitTimestamp        *uint64 `json:"last_check_split_timestamp"`
+	LastCheckRecordTimestamp       *uint64 `json:"last_check_record_timestamp"`
+}
+
+// ProjecStatusUpdateBody 按 URL 中的 project_id 更新时的请求体（不含 project_id）
+type ProjecStatusUpdateBody struct {
+	LastCheckpoint                 *uint64 `json:"last_checkpoint"`
+	IsLaunchSuc                    *bool   `json:"is_launch_suc"`
+	IsRemoveLiquidSuc              *bool   `json:"is_remove_liquid_suc"`
+	IsCollectSuc                   *bool   `json:"is_collect_suc"`
+	IsSplitSuc                     *bool   `json:"is_split_suc"`
+	IsRecordSuc                    *bool   `json:"is_record_suc"`
+	IsSoldOutSuc                   *bool   `json:"is_sold_out_suc"`
+	IsTrench                       *bool   `json:"is_trench"`
+	IsMigrateSuc                   *bool   `json:"is_migrate_suc"`
+	LastCheckLaunchTimestamp       *uint64 `json:"last_check_launch_timestamp"`
+	LastCheckRemoveLiquidTimestamp *uint64 `json:"last_check_remove_liquid_timestamp"`
+	LastCheckCollectTimestamp      *uint64 `json:"last_check_collect_timestamp"`
+	LastCheckSplitTimestamp        *uint64 `json:"last_check_split_timestamp"`
+	LastCheckRecordTimestamp       *uint64 `json:"last_check_record_timestamp"`
+}
+
+// ListProjecStatuses 获取所有项目状态记录
+func ListProjecStatuses(c *gin.Context) {
+	var rows []models.ProjecStatus
+	if err := dbconfig.DB.Find(&rows).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+// ListProjecStatusesBySlice returns paginated project status records
+func ListProjecStatusesBySlice(c *gin.Context) {
+	page := 1
+	if p := c.Query("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	pageSize := 10
+	if ps := c.Query("page_size"); ps != "" {
+		if parsed, err := strconv.Atoi(ps); err == nil && parsed > 0 && parsed <= 100 {
+			pageSize = parsed
+		}
+	}
+
+	orderField := "id"
+	if of := c.Query("order_field"); of != "" {
+		validFields := []string{
+			"id", "project_id", "last_checkpoint",
+			"is_launch_suc", "is_remove_liquid_suc", "is_collect_suc", "is_split_suc", "is_record_suc", "is_sold_out_suc", "is_trench",
+			"is_migrate_suc",
+			"last_check_launch_timestamp", "last_check_remove_liquid_timestamp",
+			"last_check_collect_timestamp", "last_check_split_timestamp", "last_check_record_timestamp",
+			"created_at", "updated_at",
+		}
+		for _, field := range validFields {
+			if of == field {
+				orderField = of
+				break
+			}
+		}
+	}
+
+	orderType := "desc"
+	if ot := c.Query("order_type"); ot == "asc" || ot == "desc" {
+		orderType = ot
+	}
+
+	offset := (page - 1) * pageSize
+
+	var total int64
+	if err := dbconfig.DB.Model(&models.ProjecStatus{}).Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var rows []models.ProjecStatus
+	if err := dbconfig.DB.Order(orderField + " " + orderType).
+		Offset(offset).
+		Limit(pageSize).
+		Find(&rows).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	totalPages := (total + int64(pageSize) - 1) / int64(pageSize)
+	c.JSON(http.StatusOK, gin.H{
+		"data": rows,
+		"pagination": gin.H{
+			"current_page": page,
+			"page_size":    pageSize,
+			"total_pages":  totalPages,
+			"total_count":  total,
+			"has_next":     page < int(totalPages),
+			"has_prev":     page > 1,
+		},
+	})
+}
+
+// GetProjecStatus 按主键获取项目状态
+func GetProjecStatus(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
+	var row models.ProjecStatus
+	if err := dbconfig.DB.First(&row, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+		return
+	}
+	c.JSON(http.StatusOK, row)
+}
+
+// GetProjecStatusesByProjectID 按 project_id 获取项目状态（唯一约束下最多一条）
+func GetProjecStatusesByProjectID(c *gin.Context) {
+	projectID, err := strconv.Atoi(c.Param("project_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project_id format"})
+		return
+	}
+	var rows []models.ProjecStatus
+	if err := dbconfig.DB.Where("project_id = ?", projectID).Find(&rows).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+// CreateProjecStatus 创建项目状态
+func CreateProjecStatus(c *gin.Context) {
+	var request ProjecStatusRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var project models.ProjectConfig
+	if err := dbconfig.DB.First(&project, request.ProjectID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project_id: Project not found"})
+		return
+	}
+	var existing models.ProjecStatus
+	if err := dbconfig.DB.Where("project_id = ?", request.ProjectID).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "ProjecStatus already exists for this project"})
+		return
+	}
+	row := models.ProjecStatus{ProjectID: request.ProjectID}
+	if request.LastCheckpoint != nil {
+		row.LastCheckpoint = *request.LastCheckpoint
+	}
+	if request.IsLaunchSuc != nil {
+		row.IsLaunchSuc = *request.IsLaunchSuc
+	}
+	if request.IsRemoveLiquidSuc != nil {
+		row.IsRemoveLiquidSuc = *request.IsRemoveLiquidSuc
+	}
+	if request.IsCollectSuc != nil {
+		row.IsCollectSuc = *request.IsCollectSuc
+	}
+	if request.IsSplitSuc != nil {
+		row.IsSplitSuc = *request.IsSplitSuc
+	}
+	if request.IsRecordSuc != nil {
+		row.IsRecordSuc = *request.IsRecordSuc
+	}
+	if request.IsSoldOutSuc != nil {
+		row.IsSoldOutSuc = *request.IsSoldOutSuc
+	}
+	if request.IsTrench != nil {
+		row.IsTrench = *request.IsTrench
+	}
+	if request.IsMigrateSuc != nil {
+		row.IsMigrateSuc = *request.IsMigrateSuc
+	}
+	if request.LastCheckLaunchTimestamp != nil {
+		row.LastCheckLaunchTimestamp = *request.LastCheckLaunchTimestamp
+	}
+	if request.LastCheckRemoveLiquidTimestamp != nil {
+		row.LastCheckRemoveLiquidTimestamp = *request.LastCheckRemoveLiquidTimestamp
+	}
+	if request.LastCheckCollectTimestamp != nil {
+		row.LastCheckCollectTimestamp = *request.LastCheckCollectTimestamp
+	}
+	if request.LastCheckSplitTimestamp != nil {
+		row.LastCheckSplitTimestamp = *request.LastCheckSplitTimestamp
+	}
+	if request.LastCheckRecordTimestamp != nil {
+		row.LastCheckRecordTimestamp = *request.LastCheckRecordTimestamp
+	}
+	if err := dbconfig.DB.Create(&row).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, row)
+}
+
+// UpdateProjecStatus 更新项目状态
+func UpdateProjecStatus(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
+	var request ProjecStatusRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var row models.ProjecStatus
+	if err := dbconfig.DB.First(&row, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+		return
+	}
+	var project models.ProjectConfig
+	if err := dbconfig.DB.First(&project, request.ProjectID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project_id: Project not found"})
+		return
+	}
+	if request.ProjectID != row.ProjectID {
+		var conflict models.ProjecStatus
+		if err := dbconfig.DB.Where("project_id = ?", request.ProjectID).First(&conflict).Error; err == nil {
+			c.JSON(http.StatusConflict, gin.H{"error": "ProjecStatus already exists for this project_id"})
+			return
+		}
+	}
+	row.ProjectID = request.ProjectID
+	if request.LastCheckpoint != nil {
+		row.LastCheckpoint = *request.LastCheckpoint
+	}
+	if request.IsLaunchSuc != nil {
+		row.IsLaunchSuc = *request.IsLaunchSuc
+	}
+	if request.IsRemoveLiquidSuc != nil {
+		row.IsRemoveLiquidSuc = *request.IsRemoveLiquidSuc
+	}
+	if request.IsCollectSuc != nil {
+		row.IsCollectSuc = *request.IsCollectSuc
+	}
+	if request.IsSplitSuc != nil {
+		row.IsSplitSuc = *request.IsSplitSuc
+	}
+	if request.IsRecordSuc != nil {
+		row.IsRecordSuc = *request.IsRecordSuc
+	}
+	if request.IsSoldOutSuc != nil {
+		row.IsSoldOutSuc = *request.IsSoldOutSuc
+	}
+	if request.IsTrench != nil {
+		row.IsTrench = *request.IsTrench
+	}
+	if request.IsMigrateSuc != nil {
+		row.IsMigrateSuc = *request.IsMigrateSuc
+	}
+	if request.LastCheckLaunchTimestamp != nil {
+		row.LastCheckLaunchTimestamp = *request.LastCheckLaunchTimestamp
+	}
+	if request.LastCheckRemoveLiquidTimestamp != nil {
+		row.LastCheckRemoveLiquidTimestamp = *request.LastCheckRemoveLiquidTimestamp
+	}
+	if request.LastCheckCollectTimestamp != nil {
+		row.LastCheckCollectTimestamp = *request.LastCheckCollectTimestamp
+	}
+	if request.LastCheckSplitTimestamp != nil {
+		row.LastCheckSplitTimestamp = *request.LastCheckSplitTimestamp
+	}
+	if request.LastCheckRecordTimestamp != nil {
+		row.LastCheckRecordTimestamp = *request.LastCheckRecordTimestamp
+	}
+	if err := dbconfig.DB.Save(&row).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, row)
+}
+
+// UpdateProjecStatusByProjectID 按 project_id（唯一索引）更新项目状态
+func UpdateProjecStatusByProjectID(c *gin.Context) {
+	projectID, err := strconv.Atoi(c.Param("project_id"))
+	if err != nil || projectID < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project_id format"})
+		return
+	}
+	var body ProjecStatusUpdateBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var project models.ProjectConfig
+	if err := dbconfig.DB.First(&project, projectID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project_id: Project not found"})
+		return
+	}
+	var row models.ProjecStatus
+	if err := dbconfig.DB.Where("project_id = ?", projectID).First(&row).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ProjecStatus not found for this project"})
+		return
+	}
+	if body.LastCheckpoint != nil {
+		row.LastCheckpoint = *body.LastCheckpoint
+	}
+	if body.IsLaunchSuc != nil {
+		row.IsLaunchSuc = *body.IsLaunchSuc
+	}
+	if body.IsRemoveLiquidSuc != nil {
+		row.IsRemoveLiquidSuc = *body.IsRemoveLiquidSuc
+	}
+	if body.IsCollectSuc != nil {
+		row.IsCollectSuc = *body.IsCollectSuc
+	}
+	if body.IsSplitSuc != nil {
+		row.IsSplitSuc = *body.IsSplitSuc
+	}
+	if body.IsRecordSuc != nil {
+		row.IsRecordSuc = *body.IsRecordSuc
+	}
+	if body.IsSoldOutSuc != nil {
+		row.IsSoldOutSuc = *body.IsSoldOutSuc
+	}
+	if body.IsTrench != nil {
+		row.IsTrench = *body.IsTrench
+	}
+	if body.IsMigrateSuc != nil {
+		row.IsMigrateSuc = *body.IsMigrateSuc
+	}
+	if body.LastCheckLaunchTimestamp != nil {
+		row.LastCheckLaunchTimestamp = *body.LastCheckLaunchTimestamp
+	}
+	if body.LastCheckRemoveLiquidTimestamp != nil {
+		row.LastCheckRemoveLiquidTimestamp = *body.LastCheckRemoveLiquidTimestamp
+	}
+	if body.LastCheckCollectTimestamp != nil {
+		row.LastCheckCollectTimestamp = *body.LastCheckCollectTimestamp
+	}
+	if body.LastCheckSplitTimestamp != nil {
+		row.LastCheckSplitTimestamp = *body.LastCheckSplitTimestamp
+	}
+	if body.LastCheckRecordTimestamp != nil {
+		row.LastCheckRecordTimestamp = *body.LastCheckRecordTimestamp
+	}
+	if err := dbconfig.DB.Save(&row).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, row)
+}
+
+// DeleteProjecStatus 删除项目状态
+func DeleteProjecStatus(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
+	if err := dbconfig.DB.Delete(&models.ProjecStatus{}, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ProjecStatus deleted successfully"})
 }
 
 // AutoCreatePumpfuninternalProjectRequest represents the request body for auto-creating a pumpfun internal project
@@ -2143,6 +2529,31 @@ func AutoCreateMeteoradbcProjectV2(c *gin.Context) {
 	if err := tx.Create(&projectConfig).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create ProjectConfig: " + err.Error()})
+		return
+	}
+
+	// 4.1 Create ProjecStatus with default values
+	isTrench := !request.PoolConfig.CpmmPoolConfig.IsSkipDbc
+	projecStatus := models.ProjecStatus{
+		ProjectID:                      projectConfig.ID,
+		LastCheckpoint:                 0,
+		IsLaunchSuc:                    false,
+		IsRemoveLiquidSuc:              false,
+		IsCollectSuc:                   false,
+		IsSplitSuc:                     false,
+		IsRecordSuc:                    false,
+		IsSoldOutSuc:                   false,
+		IsTrench:                       isTrench,
+		IsMigrateSuc:                   false,
+		LastCheckLaunchTimestamp:       0,
+		LastCheckRemoveLiquidTimestamp: 0,
+		LastCheckCollectTimestamp:      0,
+		LastCheckSplitTimestamp:        0,
+		LastCheckRecordTimestamp:       0,
+	}
+	if err := tx.Create(&projecStatus).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create ProjecStatus: " + err.Error()})
 		return
 	}
 

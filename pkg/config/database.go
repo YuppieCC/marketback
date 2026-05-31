@@ -85,6 +85,7 @@ func InitDB() {
 		&models.ProjectSettleRecord{},
 		&models.RoleConfigRelation{},
 		&models.ProjectExtraAddress{},
+		&models.ProjecStatus{},
 		&models.RaydiumLaunchpadPoolConfig{},
 		&models.RaydiumCpmmPoolConfig{},
 		&models.RaydiumLaunchpadPoolStat{},

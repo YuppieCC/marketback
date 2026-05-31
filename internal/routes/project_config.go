@@ -56,3 +56,18 @@ func SetupProjectExtraAddressRoutes(r *gin.Engine) {
 		extraAddress.GET("/project/:project_id", handlers.GetProjectExtraAddressesByProjectID)
 	}
 }
+
+// SetupProjectStatusRoutes sets up all routes related to ProjecStatus management
+func SetupProjectStatusRoutes(r *gin.Engine) {
+	status := r.Group("/project-status")
+	{
+		status.GET("", handlers.ListProjecStatuses)
+		status.GET("/slice", handlers.ListProjecStatusesBySlice)
+		status.POST("/update/:project_id", handlers.UpdateProjecStatusByProjectID)
+		status.GET("/:id", handlers.GetProjecStatus)
+		status.POST("", handlers.CreateProjecStatus)
+		status.PUT("/:id", handlers.UpdateProjecStatus)
+		status.DELETE("/:id", handlers.DeleteProjecStatus)
+		status.GET("/project/:project_id", handlers.GetProjecStatusesByProjectID)
+	}
+}

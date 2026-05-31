@@ -76,3 +76,29 @@ type ProjectExtraAddress struct {
 func (ProjectExtraAddress) TableName() string {
 	return "project_extra_address"
 }
+
+// ProjecStatus 项目各阶段任务状态（与表名 projec_status 一致）
+type ProjecStatus struct {
+	ID                             uint      `gorm:"primarykey" json:"id"`
+	ProjectID                      uint      `gorm:"uniqueIndex;not null" json:"project_id"`
+	LastCheckpoint                 uint64    `gorm:"default:0" json:"last_checkpoint"`
+	IsLaunchSuc                    bool      `gorm:"default:false" json:"is_launch_suc"`
+	IsRemoveLiquidSuc              bool      `gorm:"default:false" json:"is_remove_liquid_suc"`
+	IsCollectSuc                   bool      `gorm:"default:false" json:"is_collect_suc"`
+	IsSplitSuc                     bool      `gorm:"default:false" json:"is_split_suc"`
+	IsRecordSuc                    bool      `gorm:"default:false" json:"is_record_suc"`
+	IsSoldOutSuc                   bool      `gorm:"default:false" json:"is_sold_out_suc"`
+	IsTrench                       bool      `gorm:"default:false" json:"is_trench"`
+	IsMigrateSuc                   bool      `gorm:"default:false" json:"is_migrate_suc"`
+	LastCheckLaunchTimestamp       uint64    `gorm:"default:0" json:"last_check_launch_timestamp"`
+	LastCheckRemoveLiquidTimestamp uint64    `gorm:"default:0" json:"last_check_remove_liquid_timestamp"`
+	LastCheckCollectTimestamp      uint64    `gorm:"default:0" json:"last_check_collect_timestamp"`
+	LastCheckSplitTimestamp        uint64    `gorm:"default:0" json:"last_check_split_timestamp"`
+	LastCheckRecordTimestamp       uint64    `gorm:"default:0" json:"last_check_record_timestamp"`
+	CreatedAt                      time.Time `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt                      time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+}
+
+func (ProjecStatus) TableName() string {
+	return "projec_status"
+}

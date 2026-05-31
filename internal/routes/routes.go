@@ -82,6 +82,7 @@ func SetupRouter() *gin.Engine {
 	SetupProjectConfigRoutes(r)
 	SetupProjectTransferRoutes(r)
 	SetupProjectExtraAddressRoutes(r) // Add project extra address routes
+	SetupProjectStatusRoutes(r)
 	SetupProjectSettleRoutes(r)
 	SetupRoleConfigRoutes(r)
 	SetupProjectStatRoutes(r)
