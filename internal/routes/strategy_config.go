@@ -22,6 +22,7 @@ func SetupStrategyConfigRoutes(r *gin.Engine) {
 		strategy.POST("/close-all/:project_id", handlers.CloseStrategyConfigsByProjectId)
 		strategy.POST("/close-type", handlers.CloseStrategyTypeByProjectId)
 		strategy.POST("/check-close", handlers.CheckStrategyCloseByProjectId)
+		strategy.POST("/update", handlers.UpdateProjectStrategyParams)
 		strategy.PATCH("/:id/params", handlers.UpdateStrategyParams)
 		strategy.PATCH("/:id/stat", handlers.UpdateStrategyStat)
 		strategy.POST("/toggle/:id", handlers.ToggleStrategyConfig)

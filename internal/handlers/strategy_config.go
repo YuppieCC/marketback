@@ -312,6 +312,115 @@ type CheckStrategyCloseRequest struct {
 	StrategyType string `json:"strategy_type" binding:"required"`
 }
 
+// UpdateProjectStrategyParamsRequest updates strategy_params and/or enabled for the first matching config
+type UpdateProjectStrategyParamsRequest struct {
+	ProjectID      uint            `json:"project_id" binding:"required"`
+	StrategyType   string          `json:"strategy_type" binding:"required"`
+	StrategyParams json.RawMessage `json:"strategy_params"`
+	Enabled        *bool           `json:"enabled"`
+}
+
+func asJSONMap(v interface{}) (map[string]interface{}, bool) {
+	m, ok := v.(map[string]interface{})
+	return m, ok
+}
+
+// mergeJSONMaps deep-merges incoming into original.
+// Only keys that already exist in original (at the same level or in a nested object) are updated.
+func mergeJSONMaps(original, incoming map[string]interface{}) {
+	for key, incomingVal := range incoming {
+		originalVal, exists := original[key]
+		if exists {
+			origMap, origIsMap := asJSONMap(originalVal)
+			inMap, inIsMap := asJSONMap(incomingVal)
+			if origIsMap && inIsMap {
+				mergeJSONMaps(origMap, inMap)
+				continue
+			}
+			original[key] = incomingVal
+			continue
+		}
+		mergeJSONKeyIntoNested(original, key, incomingVal)
+	}
+}
+
+func mergeJSONKeyIntoNested(original map[string]interface{}, key string, value interface{}) {
+	for _, v := range original {
+		nested, ok := asJSONMap(v)
+		if !ok {
+			continue
+		}
+		if _, exists := nested[key]; exists {
+			nested[key] = value
+			return
+		}
+		mergeJSONKeyIntoNested(nested, key, value)
+	}
+}
+
+// mergeStrategyParams merges incoming params into original.
+// Supports nested structures (e.g. orderParams) and flat keys that match nested fields.
+func mergeStrategyParams(original, incoming json.RawMessage) (json.RawMessage, error) {
+	originalMap := make(map[string]interface{})
+	if len(original) > 0 {
+		if err := json.Unmarshal(original, &originalMap); err != nil {
+			return nil, err
+		}
+	}
+
+	incomingMap := make(map[string]interface{})
+	if err := json.Unmarshal(incoming, &incomingMap); err != nil {
+		return nil, err
+	}
+
+	mergeJSONMaps(originalMap, incomingMap)
+
+	merged, err := json.Marshal(originalMap)
+	if err != nil {
+		return nil, err
+	}
+	return merged, nil
+}
+
+// UpdateProjectStrategyParams finds the first strategy config by project_id and strategy_type,
+// merges strategy_params when provided, and updates enabled when provided.
+func UpdateProjectStrategyParams(c *gin.Context) {
+	var request UpdateProjectStrategyParamsRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var strategy models.StrategyConfig
+	if err := dbconfig.DB.Where("project_id = ? AND strategy_type = ?", request.ProjectID, request.StrategyType).
+		First(&strategy).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+		return
+	}
+
+	if len(request.StrategyParams) == 0 && request.Enabled == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "provide strategy_params and/or enabled"})
+		return
+	}
+
+	if len(request.StrategyParams) > 0 {
+		mergedParams, err := mergeStrategyParams(strategy.StrategyParams, request.StrategyParams)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid strategy_params JSON"})
+			return
+		}
+		strategy.StrategyParams = mergedParams
+	}
+	if request.Enabled != nil {
+		strategy.Enabled = *request.Enabled
+	}
+	if err := dbconfig.DB.Save(&strategy).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, strategy)
+}
+
 func CheckStrategyCloseByProjectId(c *gin.Context) {
 	var request CheckStrategyCloseRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
