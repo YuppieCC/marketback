@@ -20,6 +20,57 @@ import (
 	dbconfig "marketcontrol/pkg/config"
 )
 
+// isRetryableTransactionError reports whether GetParsedTransaction should be retried.
+func isRetryableTransactionError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := strings.ToLower(err.Error())
+	if strings.Contains(errStr, "not found") {
+		return true
+	}
+
+	// RPC providers may return partial/empty bodies for transient HTTP errors
+	// (for example: "status code: 408 ... EOF"). Treat these as retryable
+	// even when the SDK wraps them in a generic decode error.
+	transientStatusCodes := []string{"408", "429", "500", "502", "503", "504"}
+	if strings.Contains(errStr, "status code") || strings.Contains(errStr, "http status") {
+		for _, statusCode := range transientStatusCodes {
+			if strings.Contains(errStr, statusCode) {
+				return true
+			}
+		}
+	}
+
+	retryablePatterns := []string{
+		"status code: 408",
+		"status code: 429",
+		"status code: 500",
+		"status code: 502",
+		"status code: 503",
+		"status code: 504",
+		"could not decode body to rpc response: eof",
+		"eof",
+		"unexpected eof",
+		"context deadline exceeded",
+		"timeout",
+		"timed out",
+		"connection reset",
+		"connection refused",
+		"temporarily unavailable",
+		"rate limit",
+		"too many requests",
+		"transport",
+		"broken pipe",
+	}
+	for _, pattern := range retryablePatterns {
+		if strings.Contains(errStr, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
 const (
 	// Connection states
 	StateDisconnected = "disconnected"
@@ -34,7 +85,7 @@ const (
 	maxErrorCount = 6 // Maximum consecutive errors before stopping monitoring
 
 	// Transaction retry settings
-	maxTransactionRetries  = 3                      // Maximum retry attempts for getting transaction
+	maxTransactionRetries  = 5                      // Maximum retry attempts for getting transaction
 	initialRetryDelay      = 500 * time.Millisecond // Initial delay before first retry
 	maxRetryDelay          = 5 * time.Second        // Maximum delay between retries
 	retryBackoffMultiplier = 2.0                    // Exponential backoff multiplier
@@ -623,11 +674,7 @@ func (m *PoolMonitorManager) getTransactionWithRetry(ctx context.Context, conn *
 		}
 
 		lastErr = err
-		errStr := strings.ToLower(err.Error())
-		isNotFound := strings.Contains(errStr, "not found")
-
-		// If it's not a "not found" error, don't retry
-		if !isNotFound {
+		if !isRetryableTransactionError(err) {
 			log.WithFields(log.Fields{
 				"signature": signature,
 				"error":     err.Error(),
@@ -641,7 +688,7 @@ func (m *PoolMonitorManager) getTransactionWithRetry(ctx context.Context, conn *
 				"signature":      signature,
 				"retry_attempts": maxTransactionRetries + 1,
 				"error":          err.Error(),
-			}).Debug("Transaction not found after all retry attempts")
+			}).Debug("Failed to get transaction after all retry attempts")
 			return nil, err
 		}
 
@@ -651,7 +698,8 @@ func (m *PoolMonitorManager) getTransactionWithRetry(ctx context.Context, conn *
 			"attempt":        attempt + 1,
 			"max_attempts":   maxTransactionRetries,
 			"retry_delay_ms": delay.Milliseconds(),
-		}).Debug("Transaction not found, retrying")
+			"error":          err.Error(),
+		}).Warn("Retryable transaction fetch error, retrying")
 
 		// Wait before retry with exponential backoff
 		select {
@@ -678,7 +726,7 @@ func (m *PoolMonitorManager) processTransaction(conn *PoolConnection, signature 
 // processTransactionWithError fetches and parses a transaction, including failed ones
 func (m *PoolMonitorManager) processTransactionWithError(conn *PoolConnection, signature string, txError string) {
 	// Use longer timeout to accommodate retries
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Get parsed transaction
@@ -694,9 +742,9 @@ func (m *PoolMonitorManager) processTransactionWithError(conn *PoolConnection, s
 	// Get transaction with retry mechanism
 	tx, err := m.getTransactionWithRetry(ctx, conn, sig, signature)
 	if err != nil {
-		// Check if error is "not found" after all retries
 		errStr := strings.ToLower(err.Error())
 		isNotFound := strings.Contains(errStr, "not found")
+		isTransient := isRetryableTransactionError(err) && !isNotFound
 
 		if isNotFound {
 			// After all retries, transaction still not found - this is acceptable
@@ -708,11 +756,17 @@ func (m *PoolMonitorManager) processTransactionWithError(conn *PoolConnection, s
 			return
 		}
 
-		// For other errors, log as error and increment error count
+		logLevel := log.ErrorLevel
+		if isTransient {
+			logLevel = log.WarnLevel
+		}
 		log.WithFields(log.Fields{
 			"signature": signature,
 			"error":     err.Error(),
-		}).Error("Failed to get transaction after retries")
+		}).Log(logLevel, "Failed to get transaction after retries")
+		if isTransient {
+			return
+		}
 		// Increment error count and check if we should stop
 		if m.incrementErrorCount(conn) {
 			log.WithFields(log.Fields{
