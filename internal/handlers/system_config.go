@@ -454,6 +454,24 @@ func CreateSystemParams(c *gin.Context) {
 	c.JSON(http.StatusCreated, param)
 }
 
+// mergeJSONMap 将 src 深度合并到 dst 中并返回结果。
+// 对于两边都是对象（map）的字段进行递归合并，其余情况下用 src 的值覆盖 dst 的值。
+func mergeJSONMap(dst, src map[string]interface{}) map[string]interface{} {
+	if dst == nil {
+		dst = map[string]interface{}{}
+	}
+	for key, srcVal := range src {
+		if srcMap, ok := srcVal.(map[string]interface{}); ok {
+			if dstMap, ok := dst[key].(map[string]interface{}); ok {
+				dst[key] = mergeJSONMap(dstMap, srcMap)
+				continue
+			}
+		}
+		dst[key] = srcVal
+	}
+	return dst
+}
+
 // UpdateSystemParams updates an existing system params
 func UpdateSystemParams(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
@@ -488,7 +506,12 @@ func UpdateSystemParams(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid params_config JSON format"})
 			return
 		}
-		param.ParamsConfig = models.JSONMap(paramsConfigMap)
+		// 仅更新请求中提供的字段，与已有配置进行深度合并，避免覆盖未提及的字段
+		if param.ParamsConfig == nil {
+			param.ParamsConfig = models.JSONMap{}
+		}
+		merged := mergeJSONMap(map[string]interface{}(param.ParamsConfig), paramsConfigMap)
+		param.ParamsConfig = models.JSONMap(merged)
 	}
 
 	if err := dbconfig.DB.Save(&param).Error; err != nil {
